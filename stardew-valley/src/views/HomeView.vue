@@ -1,118 +1,147 @@
 <template>
-  <div class="chat-container">
-    <div class="response-box">
-      <p v-for="msg in chatMessages" :key="msg.id"
-        :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
-        {{ msg.content }}
-      </p>
+  <div>
+    <div>
+      <button @click="startNewSession">开始新会话</button>
+      <div>
+        <h3>选择会话</h3>
+        <ul>
+          <li v-for="session in sessions" :key="session">
+            <button @click="selectSession(session)">会话 {{ session }}</button>
+            <button @click="deleteSession(session)">删除</button> <!-- 添加删除按钮 -->
+          </li>
+        </ul>
+      </div>
     </div>
-    <div class="input-box">
-      <textarea v-model="userInput" placeholder="Type your message here..."></textarea>
-      <button @click="sendMessage">发送</button>
+    <div v-if="currentSessionId">
+      <h3>当前会话: {{ currentSessionId }}</h3>
+      <div>
+        <ul>
+          <li v-for="message in messages" :key="message.id">
+            <b>{{ message.sender }}:</b> {{ message.message }}
+          </li>
+        </ul>
+      </div>
+      <div>
+        <input v-model="newMessage" placeholder="输入消息" @keyup.enter="sendMessage">
+        <button @click="sendMessage">发送</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
-      userInput: '',
-      chatMessages: []  // 保存所有的聊天消息
+      sessions: [],
+      currentSessionId: null,
+      messages: [],
+      newMessage: ''
     };
   },
+  created() {
+    this.loadSessions();
+  },
   methods: {
-    async sendMessage() {
-      if (this.userInput.trim() === '') return;
-
-      // 添加用户输入到聊天记录中
-      this.chatMessages.push({ id: Date.now(), content: `${this.userInput}:你`, isUser: true });
-      try {
-        const messageToSend = this.userInput;
-        this.userInput = '';
-
-        const response = await fetch('http://127.0.0.1:5000/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message: messageToSend })
-        });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        this.chatMessages.push({ id: Date.now() + 1, content: `星露谷小助手: ${data.response}`, isUser: false });
-
-      } catch (error) {
-        console.error('There was a problem with the fetch operation:', error);
-      }
+    loadSessions() {
+      axios
+          .get('http://localhost:5000/get_sessions')
+          .then(response => {
+            this.sessions = response.data.sessions;
+          })
+          .catch(error => {
+            console.error('Error loading sessions:', error);
+          });
+    },
+    startNewSession() {
+      axios
+          .post('http://localhost:5000/new_session')
+          .then(response => {
+            const sessionId = response.data.session_id;
+            this.sessions.push(sessionId);
+            this.selectSession(sessionId);
+          })
+          .catch(error => {
+            console.error('Error creating new session:', error);
+          });
+    },
+    selectSession(sessionId) {
+      this.currentSessionId = sessionId;
+      this.loadHistory(sessionId);
+    },
+    loadHistory(sessionId) {
+      axios
+          .get(`http://localhost:5000/get_history/${sessionId}`)
+          .then(response => {
+            this.messages = response.data.history;
+          })
+          .catch(error => {
+            console.error('Error loading history:', error);
+          });
+    },
+    sendMessage() {
+      if (this.newMessage.trim() === '') return;
+      axios
+          .post('http://localhost:5000/send_message', {
+            session_id: this.currentSessionId,
+            message: this.newMessage
+          })
+          .then(response => {
+            this.messages.push({
+              sender: 'User',
+              message: this.newMessage
+            });
+            this.messages.push({
+              sender: 'AI',
+              message: response.data.response
+            });
+            this.newMessage = '';
+          })
+          .catch(error => {
+            console.error('Error sending message:', error);
+          });
+      axios
+          .post('http://localhost:5000/send_message', {
+            session_id: this.currentSessionId,
+            message: this.newMessage
+          })
+          .then(response => {
+            this.chatMessages.push({
+              id: Date.now(),
+              sender: 'User',
+              message: this.newMessage
+            });
+            this.chatMessages.push({
+              id: Date.now()+1,
+              sender: 'AI',
+              message: response.data.response
+            });
+            this.newMessage = '';
+          })
+          .catch(error => {
+            console.error('Error sending message:', error);
+          });
+    },
+    deleteSession(sessionId) {  // 添加删除会话的方法
+      axios
+          .delete(`http://localhost:5000/delete_session/${sessionId}`)
+          .then(() => {
+            this.sessions = this.sessions.filter(session => session !== sessionId);
+            if (this.currentSessionId === sessionId) {
+              this.currentSessionId = null;
+              this.messages = [];
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting session:', error);
+          });
     }
   }
 };
 </script>
 
 <style scoped>
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-}
-
-.response-box {
-  width: 100%;
-  height: 300px;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 20px;
-  overflow-y: auto;
-  background-color: #f9f9f9;
-}
-
-.input-box {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-textarea {
-  flex-grow: 1;
-  padding: 10px;
-  margin-right: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-.user-message {
-  text-align: right;
-  border: 1px solid #007bff;
-  border-radius: 4px;
-  padding: 5px;
-  margin: 5px 0;
-  background-color: #e9f5ff;
-}
-
-.assistant-message {
-  text-align: left;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px;
-  margin: 5px 0;
-  background-color: #f1f1f1;
-}
+/* Add your component-specific styles here */
 </style>

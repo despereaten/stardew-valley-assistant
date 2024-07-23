@@ -28,7 +28,7 @@ print("==============成功加载网页数据==============")
 # *实现多数据来源：文本*
 from langchain.document_loaders import TextLoader
 
-txt_file_path = "D:\PythonProjects\HW-RAG\RAG_QA.txt"
+txt_file_path = "RAG_QA.txt"
 loader_txt = TextLoader(txt_file_path, encoding='utf-8')
 txt = loader_txt.load()
 print(txt)
@@ -41,9 +41,8 @@ docs = web_docs + txt
 from langchain_huggingface import HuggingFaceEmbeddings
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name="D:\PythonProjects\models\m3e-base",
-                                   model_kwargs={'device': EMBEDDING_DEVICE}
-                                   )
+embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+                                   model_kwargs={'device': EMBEDDING_DEVICE})
 print(embeddings)
 print("==============2==============")
 
@@ -100,10 +99,7 @@ retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
 from langchain_core.messages import HumanMessage, AIMessage
 
-chat_history = []
-
-
-def get_response(human_message):
+def get_response(human_message,chat_history):
     response = retrieval_chain.invoke({
         "chat_history": chat_history,
         "input": human_message

@@ -1,8 +1,6 @@
 # 本文档仅需运行一次，获得faiss_index即可
 import time
-
 from langchain_core.documents import Document
-
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin

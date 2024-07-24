@@ -1,7 +1,5 @@
 import os
 
-
-
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
 # WebBaseLoader --BeautifulSoup4
@@ -17,51 +15,53 @@ zhipuai_chat_model = ChatZhipuAI(model="glm-4")
 # 完成模型的选用,封装为chat_model
 chat_model = zhipuai_chat_model
 
-# 1. 为llm提供额外的数据-context（从网页加载）
-from langchain_community.document_loaders import WebBaseLoader
-
-loader = WebBaseLoader(
-    web_path="https://zh.stardewvalleywiki.com/%E8%8A%82%E6%97%A5"
-)
-web_docs = loader.load()
-print(web_docs)
-print("==============成功加载网页数据==============")
-
-# *实现多数据来源：文本*
-from langchain.document_loaders import TextLoader
-
-txt_file_path = "RAG_QA.txt"
-loader_txt = TextLoader(txt_file_path, encoding='utf-8')
-txt = loader_txt.load()
-print(txt)
-print("==============成功加载txt数据==============")
-
-# 1-2 将网页+文本的数据加载到Document中
-docs = web_docs + txt
+# # 1. 为llm提供额外的数据-context（从网页加载）
+# from langchain_community.document_loaders import WebBaseLoader
+#
+# loader = WebBaseLoader(
+#     web_path="https://zh.stardewvalleywiki.com/%E8%8A%82%E6%97%A5"
+# )
+# web_docs = loader.load()
+# print(web_docs)
+# print("==============成功加载网页数据==============")
+#
+# # *实现多数据来源：文本*
+# from langchain.document_loaders import TextLoader
+#
+# txt_file_path = "RAG_QA.txt"
+# loader_txt = TextLoader(txt_file_path, encoding='utf-8')
+# txt = loader_txt.load()
+# print(txt)
+# print("==============成功加载txt数据==============")
+#
+# # 1-2 将网页+文本的数据加载到Document中
+# docs = web_docs + txt
 
 # 2.将Document(s)索引（Indexes）到向量存储
-from langchain_huggingface import HuggingFaceEmbeddings
-
-EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
-                                   model_kwargs={'device': EMBEDDING_DEVICE})
-print(embeddings)
-print("==============2==============")
 
 # 分词
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
+#
+# text_splitter = RecursiveCharacterTextSplitter()
+# documents = text_splitter.split_documents(documents=docs)
+# print(documents)
+# print("==============分词^==============")
+#
+# from langchain_community.vectorstores import FAISS
+#
+# # 建立索引：将词向量存储到向量数据库
+# vector = FAISS.from_documents(documents=documents, embedding=embeddings)
+# print(vector)
+# print("==============词向量^==============")
 
-text_splitter = RecursiveCharacterTextSplitter()
-documents = text_splitter.split_documents(documents=docs)
-print(documents)
-print("==============分词^==============")
-
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-# 建立索引：将词向量存储到向量数据库
-vector = FAISS.from_documents(documents=documents, embedding=embeddings)
-print(vector)
-print("==============词向量^==============")
+EMBEDDING_DEVICE = "cpu"
+embeddings = HuggingFaceEmbeddings(model_name="D:\PythonProjects\models\m3e-base",
+                                   model_kwargs={'device': EMBEDDING_DEVICE})
+print("==============加载模型==============")
+vector = FAISS.load_local("./faiss_index", embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
 retriever = vector.as_retriever()
@@ -101,7 +101,8 @@ retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
 from langchain_core.messages import HumanMessage, AIMessage
 
-def get_response(human_message,chat_history):
+
+def get_response(human_message, chat_history):
     response = retrieval_chain.invoke({
         "chat_history": chat_history,
         "input": human_message

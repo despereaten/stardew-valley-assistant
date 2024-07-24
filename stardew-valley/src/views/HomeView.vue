@@ -33,18 +33,23 @@
         <div class="right-column">
           <div class="response-box">
             <div v-if="currentSessionId">
-              <p v-for="msg in chatMessages" :key="msg.id"
+              <p v-for="msg in chatMessages" :key="msg.id" style="padding: 1px 2%;"
                 :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
                 <img v-if="msg.sender === 'User'" class="avatar" src="../assets/assistant/Abigail_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
-                {{ msg.message }}
+                <!-- {{ msg.message }} -->
+                <MarkdownRenderer :markdown="msg.message" />
               </p>
             </div>
           </div>
 
           <div class="input-box">
+<<<<<<< HEAD
+            <textarea v-model="userInput" placeholder="请输入文字..." @keyup.enter="sendMessage"></textarea>
+=======
             <textarea v-model="userInput" placeholder="请输入文字..."></textarea>
+>>>>>>> 1e471093d7b17b2303eefb597cca11db924e7e8c
             <button @click="sendMessage">发送</button>
           </div>
         </div>
@@ -60,12 +65,16 @@ import axios from 'axios';
 import snow from '../components/snow.vue'
 import flower from '../components/flower.vue'
 import star from '../components/star.vue'
+import { MarkdownIt } from 'vue3-markdown-it'
+import MarkdownRenderer from '../components/MarkdownRenderer.vue';
 
 export default {
   components: {
     snow,
     flower,
-    star
+    star,
+    MarkdownIt,
+    MarkdownRenderer,
   },
   data() {
     return {
@@ -510,5 +519,13 @@ button:hover {
 
 .blue-button {
   background-color: rgb(145, 198, 244);
+}
+
+.markdown-it {
+  font-family: Arial, sans-serif;
+}
+.markdown-it ul {
+  list-style-type: disc;
+  padding-left: 20px;
 }
 </style>

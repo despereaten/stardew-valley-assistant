@@ -2,7 +2,12 @@ import io
 import os
 import sys
 
+<<<<<<< HEAD
+
+
+=======
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='gb18030')  # 改变标准输出的默认编码
+>>>>>>> 1e471093d7b17b2303eefb597cca11db924e7e8c
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
 # WebBaseLoader --BeautifulSoup4

@@ -1,7 +1,13 @@
+import io
 import os
+import sys
+
+<<<<<<< HEAD
 
 
-
+=======
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='gb18030')  # 改变标准输出的默认编码
+>>>>>>> 1e471093d7b17b2303eefb597cca11db924e7e8c
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
 # WebBaseLoader --BeautifulSoup4
@@ -43,7 +49,7 @@ docs = web_docs + txt
 from langchain_huggingface import HuggingFaceEmbeddings
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+embeddings = HuggingFaceEmbeddings(model_name= r"model\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print(embeddings)
 print("==============2==============")

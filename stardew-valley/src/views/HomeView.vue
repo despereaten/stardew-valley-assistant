@@ -45,7 +45,11 @@
           </div>
 
           <div class="input-box">
+<<<<<<< HEAD
             <textarea v-model="userInput" placeholder="请输入文字..." @keyup.enter="sendMessage"></textarea>
+=======
+            <textarea v-model="userInput" placeholder="请输入文字..."></textarea>
+>>>>>>> 1e471093d7b17b2303eefb597cca11db924e7e8c
             <button @click="sendMessage">发送</button>
           </div>
         </div>

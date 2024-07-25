@@ -22,10 +22,6 @@ class ChatHistory(db.Model):
 with app.app_context():
     db.create_all()
 
-# @app.route('/new_session', methods=['POST'])
-# def new_session():
-#     session_id = str(uuid.uuid4())
-#     return jsonify({'session_id': session_id})
 @app.route('/new_session', methods=['POST'])
 def new_session():
     session_id = str(uuid.uuid4())

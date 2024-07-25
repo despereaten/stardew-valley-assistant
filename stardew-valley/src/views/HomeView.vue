@@ -21,7 +21,7 @@
         <div class="left-column">
           <button class="new-session" @click="startNewSession">新会话</button>
           <div>
-            <h3 class="history-chat">历史会话</h3>
+            <h3 class="history-chat-title">历史会话</h3>
             <ul class="session-list">
               <li v-for="session in sessions" :key="session.session_id" class="session-item">
                 <button @click="selectSession(session.session_id)" class="session-button" :title="session.summary"
@@ -133,7 +133,8 @@ export default {
       axios
         .delete(`http://localhost:5000/delete_session/${sessionId}`)
         .then(() => {
-          this.sessions = this.sessions.filter(session => session !== sessionId);
+          // this.sessions = this.sessions.filter(session => session !== sessionId);
+          this.loadSessions();
           if (this.currentSessionId === sessionId) {
             this.currentSessionId = null;
             this.chatMessages = [];
@@ -320,7 +321,7 @@ nav img {
   box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
 
-.history-chat {
+.history-chat-title {
   padding-top: 6%;
   padding-left: 1%;
   color: #8a390a;
@@ -330,7 +331,6 @@ nav img {
 .session-list {
   list-style-type: none;
   padding: 0;
-
 }
 
 .session-item {
@@ -426,9 +426,6 @@ nav img {
   box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
   scrollbar-color: #8a390a rgba(255, 255, 255, 0.9);
 }
-
-
-
 
 
 .input-box {
@@ -537,4 +534,5 @@ button:hover {
 .markdown-it ul {
   list-style-type: disc;
   padding-left: 20px;
-}</style>
+}
+</style>

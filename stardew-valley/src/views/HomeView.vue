@@ -1,13 +1,13 @@
 <template>
   <nav>
-        <ul>
-            <img src="../assets/assistant/Main_Logo_ZH.png" alt="标识" class="logo-icon">
-        </ul>
-    </nav>
+    <ul>
+      <img src="../assets/assistant/Main_Logo_ZH.png" alt="标识" class="logo-icon">
+    </ul>
+  </nav>
   <div id="loading" class="loading-container" style="display: none;">
-      <img src="../assets/assistant/Dog.gif" alt="Loading" class="loading-rabbit">
-      <p class="loading-text">正在回复中...</p>
-    </div>
+    <img src="../assets/assistant/Dog.gif" alt="Loading" class="loading-rabbit">
+    <p class="loading-text">正在回复中...</p>
+  </div>
   <div>
     <div class="button-container">
       <img src="../assets/assistant/clothes.png" class="clothes-icon "></img>
@@ -23,9 +23,13 @@
           <div>
             <h3 class="history-chat">历史会话</h3>
             <ul class="session-list">
-              <li v-for="session in sessions" :key="session" class="session-item">
-                <button @click="selectSession(session)" class="session-button" :title="session">会话 {{ session }}</button>
-                <button @click="deleteSession(session)" class="delete-button"></button> <!-- 添加删除按钮 -->
+              <li v-for="session in sessions" :key="session.session_id" class="session-item">
+                <button @click="selectSession(session.session_id)" class="session-button" :title="session.summary"
+                  v-if="session.summary != null">
+                  {{ session.summary }}
+                </button>
+                <button @click="deleteSession(session.session_id)" class="delete-button"
+                  v-if="session.summary != null"></button> <!-- 添加删除按钮 -->
               </li>
             </ul>
           </div>
@@ -45,7 +49,7 @@
           </div>
 
           <div class="input-box">
-            <textarea v-model="userInput" placeholder="请输入文字..." @keyup.enter="sendMessage"></textarea>
+            <textarea v-model="userInput" placeholder="请输入你的疑问..." @keydown.enter="sendMessage"></textarea>
             <button @click="sendMessage">发送</button>
           </div>
         </div>
@@ -100,10 +104,10 @@ export default {
       axios
         .post('http://localhost:5000/new_session')
         .then(response => {
-          const sessionId = response.data.session_id;
-          this.sessions.push(sessionId);
-          this.selectSession(sessionId);
-          console.log("add dialog:", sessionId);
+          const session = response.data;
+          this.sessions.push(session);
+          this.selectSession(session.session_id);
+          console.log("add dialog:", session.session_id);
         })
         .catch(error => {
           console.error('Error creating new session:', error);
@@ -142,20 +146,21 @@ export default {
     },
     sendMessage() {
       if (this.userInput.trim() === '') return;
-
+      const messageToSend = this.userInput;
+      this.userInput = '';
       // 显示等待动画
       document.getElementById('loading').style.display = 'flex';
 
       axios
         .post('http://localhost:5000/send_message', {
           session_id: this.currentSessionId,
-          message: this.userInput
+          message: messageToSend
         })
         .then(response => {
           this.chatMessages.push({
             id: Date.now(),
             sender: 'User',
-            message: this.userInput
+            message: messageToSend
           });
           this.chatMessages.push({
             id: Date.now() + 1,
@@ -163,9 +168,15 @@ export default {
             message: response.data.response
           });
           this.userInput = '';
-
           // 隐藏等待动画
           document.getElementById('loading').style.display = 'none';
+
+          //更新session summary
+          const updatedSummary = response.data.summary;
+          const sessionIndex = this.sessions.findIndex(session => session.session_id === this.currentSessionId);
+          if (sessionIndex !== -1) {
+            this.sessions[sessionIndex].summary = updatedSummary;
+          }
         })
         .catch(error => {
           console.error('Error sending message:', error);
@@ -206,7 +217,7 @@ nav img {
   left: 15px;
   width: 180px;
   height: auto;
-   transform-origin: top left;
+  transform-origin: top left;
 }
 
 .loading-container {
@@ -227,7 +238,7 @@ nav img {
   height: auto;
 }
 
-.loading-text{
+.loading-text {
   color: #8a390a;
   font-weight: bold;
 }
@@ -273,12 +284,12 @@ nav img {
   border-radius: 20px;
   background-color: #fdbc72b7;
   box-shadow:
-      inset #8a390a 0 0 0 2px,
-      inset #ba4d0d 0 0 0 5px,
-      inset #ffa845 0 0 0 9px,
-      inset #cd710f  0 0 0 12px,
-      inset #ba4d0d 0 0 0 14px,
-      inset #8a390a 0 0 0 16px,
+    inset #8a390a 0 0 0 2px,
+    inset #ba4d0d 0 0 0 5px,
+    inset #ffa845 0 0 0 9px,
+    inset #cd710f 0 0 0 12px,
+    inset #ba4d0d 0 0 0 14px,
+    inset #8a390a 0 0 0 16px,
 }
 
 .left-column {
@@ -290,7 +301,7 @@ nav img {
   border: 2px solid #cccccc00;
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.833);
-  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2); 
+  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
 
 .right-column {
@@ -303,13 +314,13 @@ nav img {
   justify-content: space-between;
 }
 
-.new-session{
+.new-session {
   width: 94%;
   font-size: 1.02em;
-  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2); 
+  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
 
-.history-chat{
+.history-chat {
   padding-top: 6%;
   padding-left: 1%;
   color: #8a390a;
@@ -317,7 +328,7 @@ nav img {
 }
 
 .session-list {
-  list-style-type: none; 
+  list-style-type: none;
   padding: 0;
 
 }
@@ -333,13 +344,15 @@ nav img {
   padding: 10px;
   background-color: rgba(255, 255, 255, 0.833);
   color: #ba4d0d;
-  border-bottom-style:2px solid #ba4d0d;;
+  border-bottom-style: 2px solid #ba4d0d;
+  ;
   border-radius: 4px;
   cursor: pointer;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  max-width: 80%; /* 固定按钮最大宽度 */
+  max-width: 80%;
+  /* 固定按钮最大宽度 */
 }
 
 .session-button:hover {
@@ -360,14 +373,14 @@ nav img {
   padding: 16px;
   margin-left: 10px;
   background: url('../assets/assistant/delete.png') no-repeat center center;
-  
-  border:2px solid#f8965eab;
+
+  border: 2px solid#f8965eab;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .delete-button:hover {
-  transform: scale(1.1); 
+  transform: scale(1.1);
 }
 
 .background {
@@ -408,9 +421,9 @@ nav img {
   //font-family:"";
   font-size: 1.2em;
   color: #9c3f0a;
-  font-weight:bold;
+  font-weight: bold;
   text-shadow: 2px 2px 2px #5c190b3d;
-  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2); 
+  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
   scrollbar-color: #8a390a rgba(255, 255, 255, 0.9);
 }
 
@@ -419,7 +432,7 @@ nav img {
 
 
 .input-box {
-  
+
   display: flex;
   align-items: center;
   width: 94%;
@@ -435,7 +448,7 @@ textarea {
   border-radius: 4px;
   resize: none;
   min-width: 200px;
-  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2); 
+  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
 
 button {
@@ -445,9 +458,9 @@ button {
   color: white;
   border-radius: 4px;
   cursor: pointer;
-  font-weight:bold;
+  font-weight: bold;
   text-shadow: 2px 2px 2px #5c190b3d;
-  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);  
+  box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
@@ -463,7 +476,7 @@ button:hover {
   background-color: #fb955ae0;
   display: flex;
   align-items: center;
-  
+
 }
 
 .assistant-message {
@@ -492,7 +505,7 @@ button:hover {
   gap: 10px;
 }
 
-.clothes-icon{
+.clothes-icon {
   width: 25px;
   height: 25px;
 }
@@ -520,8 +533,8 @@ button:hover {
 .markdown-it {
   font-family: Arial, sans-serif;
 }
+
 .markdown-it ul {
   list-style-type: disc;
   padding-left: 20px;
-}
-</style>
+}</style>

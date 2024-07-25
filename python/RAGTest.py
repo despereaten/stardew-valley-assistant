@@ -58,10 +58,11 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name="D:\PythonProjects\models\m3e-base",
+embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-vector = FAISS.load_local("./faiss_index", embeddings, allow_dangerous_deserialization=True)
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\langchain_02_models\stardew-valley-assistant\python\faiss_index",
+                          embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
 retriever = vector.as_retriever()
@@ -111,3 +112,22 @@ def get_response(human_message, chat_history):
     chat_history.append(HumanMessage(content=human_message))
     chat_history.append(AIMessage(content=ai_message))
     return ai_message
+
+def summarize_dialog(human_message):
+    response = retrieval_chain.invoke({
+        "chat_history": [],  # 仅处理当前输入
+        "input":
+            f"""
+            请在十个字内概括后面这个问题的梗概，请注意，不是回答这个问题，而是根据这个问题给对话起一个十字以内的短标题。
+            如：'我想给艾米丽送一些礼物，请问她喜欢的东西有哪些？'概括为'艾米丽喜欢的东西'
+            '星露谷的世界里，夏天有哪些节日，请简单介绍他们？'概括为'夏季节日总结'
+            下面是问题：{human_message}
+            """,
+    })
+    summary = response["answer"]
+    print(summary)
+    return summary
+
+# if __name__ == "__main__":
+#     user_input = input("请输入要概括的内容：")
+#     summarize_dialog(user_input)

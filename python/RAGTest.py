@@ -8,50 +8,18 @@ os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1
 
 # zhipu
 from langchain_community.chat_models import ChatZhipuAI
+from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-zhipuai_chat_model = ChatZhipuAI(model="glm-4")
+zhipuai_chat_model = ChatZhipuAI(
+    model="glm-4",
+    temperature = 0.5,
+    streaming = True,
+    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+)
 
 # 完成模型的选用,封装为chat_model
 chat_model = zhipuai_chat_model
-
-# # 1. 为llm提供额外的数据-context（从网页加载）
-# from langchain_community.document_loaders import WebBaseLoader
-#
-# loader = WebBaseLoader(
-#     web_path="https://zh.stardewvalleywiki.com/%E8%8A%82%E6%97%A5"
-# )
-# web_docs = loader.load()
-# print(web_docs)
-# print("==============成功加载网页数据==============")
-#
-# # *实现多数据来源：文本*
-# from langchain.document_loaders import TextLoader
-#
-# txt_file_path = "RAG_QA.txt"
-# loader_txt = TextLoader(txt_file_path, encoding='utf-8')
-# txt = loader_txt.load()
-# print(txt)
-# print("==============成功加载txt数据==============")
-#
-# # 1-2 将网页+文本的数据加载到Document中
-# docs = web_docs + txt
-
-# 2.将Document(s)索引（Indexes）到向量存储
-
-# 分词
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-#
-# text_splitter = RecursiveCharacterTextSplitter()
-# documents = text_splitter.split_documents(documents=docs)
-# print(documents)
-# print("==============分词^==============")
-#
-# from langchain_community.vectorstores import FAISS
-#
-# # 建立索引：将词向量存储到向量数据库
-# vector = FAISS.from_documents(documents=documents, embedding=embeddings)
-# print(vector)
-# print("==============词向量^==============")
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -60,7 +28,7 @@ EMBEDDING_DEVICE = "cpu"
 embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-vector = FAISS.load_local(r"C:\Users\20991\Desktop\langchain_02_models\stardew-valley-assistant\python\faiss_index",
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
                           embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
@@ -99,7 +67,7 @@ from langchain.chains.retrieval import create_retrieval_chain
 # 然后使用 document_chain 基于检索到的信息生成回答。
 retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 
 def get_response(human_message, chat_history):
@@ -120,13 +88,44 @@ def summarize_dialog(human_message):
             请在十个字内概括后面这个问题的梗概，请注意，不是回答这个问题，而是根据这个问题给对话起一个十字以内的短标题。
             如：'我想给艾米丽送一些礼物，请问她喜欢的东西有哪些？'概括为'艾米丽喜欢的东西'
             '星露谷的世界里，夏天有哪些节日，请简单介绍他们？'概括为'夏季节日总结'
+            如果你认为这个问题和星露谷无关，请直接总结这个问题，而不是强行总结为节日之类的概括，比如用户询问'如何安装pycharm？有什么注意事项？'则总结为'pycharm安装'
             下面是问题：{human_message}
             """,
     })
     summary = response["answer"]
-    print(summary)
+    # print(summary)
     return summary
+
+def get_links(human_message):
+    response = retrieval_chain.invoke({
+        "chat_history": [],  # 仅处理当前输入
+        "input":
+            f"""
+                请根据我感兴趣的题材获取一些和星露谷有关的网页链接列表（请提供准确的网址），我感兴趣的题材是：{human_message}
+                别的文字都不需要，只提供准确的网址
+            """,
+    })
+    links = response["answer"]
+    print(links)
+    return links
+
+
+def RAG_stream(input,chat_history):
+    for chunk in retrieval_chain.stream({"chat_history": chat_history, "input": input}):
+        # delta_content = chunk.choices[0].delta.input
+        delta_content = chunk.get("answer")
+        if delta_content:
+            yield f"{delta_content}".encode('utf-8')
+
+
 
 # if __name__ == "__main__":
 #     user_input = input("请输入要概括的内容：")
 #     summarize_dialog(user_input)
+if __name__ == "__main__":
+    # user_input = input("Enter")
+    # get_links(user_input)
+    chunks = []
+    for chunk in chat_model.stream("what color is the sky?"):
+        chunks.append(chunk)
+        print(chunk.content, end="|", flush=True)

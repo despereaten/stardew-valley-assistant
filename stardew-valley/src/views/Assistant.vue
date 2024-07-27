@@ -46,7 +46,7 @@
           </div>
         </div>
         <div class="right-column">
-          <div class="response-box">
+          <div class="response-box" ref="responseBox">
             <div v-if="currentSessionId">
               <p v-for="msg in chatMessages" :key="msg.id" style="padding: 1px 2%;"
                 :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
@@ -61,7 +61,8 @@
 
           <div class="input-box">
             <textarea v-model="userInput" placeholder="请输入你的疑问..." @keydown.enter="sendMessage"></textarea>
-            <button @click="sendMessage">发送</button>
+            <button v-if="!isStreaming" @click="sendMessage">发送</button>
+            <button v-else @click="stopStreaming">暂停</button>
           </div>
         </div>
 
@@ -102,7 +103,7 @@ export default {
       showProfile: false,
       hideProfileTimer: null,
       username: localStorage.getItem('username'),
-      sessions: [],
+      sessions: [],//只包含session_id和summary信息
       currentSessionId: null,
       userInput: '',
       chatMessages: [],  // 保存所有的聊天消息
@@ -110,6 +111,7 @@ export default {
       currentComponent: 'snow',
       controller: new AbortController(),
       response: '',
+      isStreaming: false,
     };
   },
   created() {
@@ -144,7 +146,7 @@ export default {
       localStorage.removeItem('token'); // 移除token
       this.$router.push('/'); // 跳转到登录页面
     },
-    loadSessions() {
+    loadSessions() {//从后端获取当前用户的所有会话
       axios
         .get('http://localhost:5000/get_sessions')
         .then(response => {
@@ -199,22 +201,36 @@ export default {
           console.error('Error deleting session:', error);
         });
     },
-    
+    scrollToBottom() {
+      const responseBox = this.$refs.responseBox;
+      responseBox.scrollTop = responseBox.scrollHeight;
+    },
+    stopStreaming() {
+      this.isStopped = true;
+      this.isStreaming = false;
+      this.controller.abort();
+    },
     async sendMessage() {
       if (this.userInput.trim() === '') return;
+      // 显示等待动画
+      document.getElementById('loading').style.display = 'flex';
       const messageToSend = this.userInput;
       console.log("messageToSend", messageToSend);
       this.controller = new AbortController();
       this.response = '';
       this.isStopped = false;
+      this.isStreaming = true;
 
       this.userInput = '';
-      // 显示等待动画
-      // document.getElementById('loading').style.display = 'flex';
+
       this.chatMessages.push({
         id: Date.now(),
         sender: 'User',
         message: messageToSend
+      });
+
+      this.$nextTick(() => {
+        this.scrollToBottom();
       });
 
       // 初始化 AI 消息
@@ -225,17 +241,24 @@ export default {
         message: ''
       });
 
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
+
       const response = await fetch('http://localhost:5000/send_message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`  // 添加token
         },
-        body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),
+        body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
         signal: this.controller.signal
       });
+      // 隐藏等待动画
+      document.getElementById('loading').style.display = 'none';
 
       const reader = response.body.getReader();
+      const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
       while (true) {
         if (this.isStopped) break;
         const { done, value } = await reader.read();
@@ -243,12 +266,15 @@ export default {
         this.response += new TextDecoder().decode(value);
 
         // 更新 AI 消息内容
-        const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
         if (aiMessageIndex !== -1) {
           this.chatMessages[aiMessageIndex].message = this.response;
         }
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
       }
 
+      this.isStreaming = false;
       // 在消息完全接收后保存答案
       axios.post('http://localhost:5000/save_answer', {
         session_id: this.currentSessionId,
@@ -267,6 +293,7 @@ export default {
           })
           .catch(error => {
             console.error('Error loading history:', error);
+            this.isStreaming = false;
           });
         this.loadSessions();
       }

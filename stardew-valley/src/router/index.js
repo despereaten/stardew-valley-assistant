@@ -4,12 +4,15 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Assistant from '../views/Assistant.vue';
 
+import GuessLike  from "../views/GuessLike.vue";
+
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView,
+    // component: HomeView,
+    component: GuessLike,
   },
   {
     path: '/login',
@@ -25,6 +28,12 @@ const routes = [
     path: '/Assistant',
     name: 'Assistant',
     component: Assistant,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/GuessLike',
+    name: 'GuessLike',
+    component: GuessLike,
     meta: { requiresAuth: true }
   },
 

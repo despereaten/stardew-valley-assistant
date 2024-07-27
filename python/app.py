@@ -5,6 +5,7 @@ import requests
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from RAGTest import get_response,summarize_dialog,RAG_stream
+from get_links import get_links
 import uuid
 
 app = Flask(__name__)
@@ -195,6 +196,12 @@ def stream_output():
     if data:
         return Response(RAG_stream(message,[]), mimetype='text/plain')
     return "没有内容"
+
+@app.route('/get_links', methods=['GET'])
+def get_link():
+    keyword = "阿比盖尔"
+    links = get_links(keyword)
+    return jsonify({'links': links})
 
 
 if __name__ == '__main__':

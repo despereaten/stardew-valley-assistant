@@ -53,8 +53,8 @@
                 <img v-if="msg.sender === 'User'" class="avatar" src="../assets/assistant/Abigail_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
-                <!-- {{ msg.message }} -->
                 <MarkdownRenderer :markdown="msg.message" />
+                <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon" @click="copyToClipboard(msg.message)" alt="Copy Icon">
               </p>
             </div>
           </div>
@@ -70,6 +70,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from 'axios';
@@ -311,7 +312,12 @@ export default {
         this.currentBackground = 'background-winter';
         this.currentComponent = 'snow';
       }
-    }
+    }, copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('复制成功');
+      }).catch(err => {
+        console.error('复制失败', err);
+      })}
   }
 };
 </script>
@@ -642,6 +648,7 @@ button:hover {
 }
 
 .assistant-message {
+  position: relative;
   text-align: left;
   border: 1px solid #99410f;
   border-radius: 4px;
@@ -705,5 +712,14 @@ button:hover {
 .markdown-it ul {
   list-style-type: disc;
   padding-left: 20px;
+}
+
+.copy-icon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 }
 </style>

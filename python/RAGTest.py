@@ -1,4 +1,5 @@
 import os
+import re
 
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
@@ -105,11 +106,27 @@ def get_links(human_message):
         "input":
             f"""
                 请根据我感兴趣的题材获取一些和星露谷有关的网页链接列表（请提供准确的网址），我感兴趣的题材是：{human_message}
-                别的文字都不需要，只提供准确的网址
+                别的文字都不需要，只提供准确的网址。
+                你可以从星露谷维基获取页面，也可以从新浪微博，小红书，youtube，bilibili等平台获取页面。
+                please get some famous and well-known posts
+                请按照'''
+                1. https://xxxxxxxx
+                2. https://xxxxxxxx
+                3. https://xxxxxxxx
+                4. https://xxxxxxxx
+                5. https://xxxxxxxx
+                6. https://xxxxxxxx
+                7. https://xxxxxxxx
+                '''的格式输出列表，需要10个网址，不允许有任何多余的文字
             """,
     })
-    links = response["answer"]
-    print(links)
+    res = response["answer"]
+    print(res)
+    # 定义更通用的正则表达式模式
+    pattern = r'https?://[^\s]+'
+
+    # 使用正则表达式查找所有匹配的链接
+    links = re.findall(pattern, res)
     return links
 
 
@@ -121,13 +138,26 @@ def RAG_stream(input, chat_history):
             yield f"{delta_content}".encode('utf-8')
 
 
+<<<<<<< HEAD
+#
+=======
+>>>>>>> d239060cc89ed6f1d57ccc5a79a029d362595381
 # if __name__ == "__main__":
 #     user_input = input("请输入要概括的内容：")
 #     summarize_dialog(user_input)
 if __name__ == "__main__":
+<<<<<<< HEAD
+    user_input = input("Enter")
+    print(get_links(user_input))
+    # chunks = []
+    # for chunk in chat_model.stream("what color is the sky?"):
+    #     chunks.append(chunk)
+    #     print(chunk.content, end="|", flush=True)
+=======
     # user_input = input("Enter")
     # get_links(user_input)
     chunks = []
     for chunk in chat_model.stream("what color is the sky?"):
         chunks.append(chunk)
         print(chunk.content, end="|", flush=True)
+>>>>>>> d239060cc89ed6f1d57ccc5a79a029d362595381

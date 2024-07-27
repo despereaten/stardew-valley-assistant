@@ -26,10 +26,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
+vector = FAISS.load_local("./faiss_index",
                           embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器

@@ -54,7 +54,8 @@
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
                 <MarkdownRenderer :markdown="msg.message" />
-                <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon" @click="copyToClipboard(msg.message)" alt="Copy Icon">
+                <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon"
+                  @click="copyToClipboard(msg.message)" alt="Copy Icon">
               </p>
             </div>
           </div>
@@ -210,6 +211,7 @@ export default {
       this.isStopped = true;
       this.isStreaming = false;
       this.controller.abort();
+      this.saveAnswer(this.response);
     },
     async sendMessage() {
       if (this.userInput.trim() === '') return;
@@ -276,11 +278,10 @@ export default {
       }
 
       this.isStreaming = false;
-      // 在消息完全接收后保存答案
-      axios.post('http://localhost:5000/save_answer', {
-        session_id: this.currentSessionId,
-        answer: this.response
-      });
+      // 在消息完全接收后或流式输出停止后保存答案
+      if (!this.isStopped) {
+        this.saveAnswer(this.response);
+      }
 
       const sessionIndex = this.sessions.findIndex(session => session.session_id === this.currentSessionId);
       //更新session summary
@@ -300,7 +301,16 @@ export default {
       }
     }
     ,
-
+    async saveAnswer(answer) {
+      try {
+        await axios.post('http://localhost:5000/save_answer', {
+          session_id: this.currentSessionId,
+          answer: answer
+        });
+      } catch (error) {
+        console.error('Error saving answer:', error);
+      }
+    },
     changeBackground(type) {
       if (type === 'day') {
         this.currentBackground = 'background-day';
@@ -317,7 +327,8 @@ export default {
         alert('复制成功');
       }).catch(err => {
         console.error('复制失败', err);
-      })}
+      })
+    }
   }
 };
 </script>

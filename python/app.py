@@ -1,22 +1,19 @@
 import logging
-from flask import Flask, request, jsonify, Response
-import asyncio
+from flask import Flask, request, jsonify,Response
+import requests
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-<<<<<<< HEAD
 from RAGTest import get_response,summarize_dialog,RAG_stream
 from get_links import get_links
-=======
-from RAGTest import summarize_dialog, RAG_stream
->>>>>>> d239060cc89ed6f1d57ccc5a79a029d362595381
 import uuid
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
-# 初始化实例以便进行数据库操作
 db = SQLAlchemy(app)
 CORS(app)
 app.logger.setLevel(logging.DEBUG)
+
 
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -26,34 +23,28 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 
-# 用户模型
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
 
-# 会话模型
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(50), unique=True, nullable=False)
     summary = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    # 通过user_id字段与User模型建立外键关系。
     user = db.relationship('User', backref=db.backref('sessions', lazy=True))
 
 
-# 聊天历史模型:message为内容，sender为发送者
 class ChatHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(500), nullable=False)
     sender = db.Column(db.String(50), nullable=False)
     session_id = db.Column(db.String(50), db.ForeignKey('session.session_id'), nullable=False)
-    # 通过session_id字段与Session模型建立外键关系。
     session = db.relationship('Session', backref=db.backref('chats', lazy=True))
 
 
-# 用户注册
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -70,10 +61,9 @@ def register():
     return jsonify({'message': 'User registered successfully'}), 201
 
 
-# 用户登录
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json  # 从请求中提取JSON数据
+    data = request.json
     username = data['username']
     password = data['password']
 
@@ -91,7 +81,6 @@ with app.app_context():
     db.create_all()
 
 
-# 生成新对话
 @app.route('/new_session', methods=['POST'])
 @jwt_required()
 def new_session():
@@ -110,14 +99,13 @@ def new_session():
     return jsonify({'session_id': session_id, 'summary': summary})
 
 
-# 客户端发送消息
 @app.route('/send_message', methods=['POST'])
 @jwt_required()
-async def send_message():
+def send_message():
     user_id = get_jwt_identity()
     data = request.json
     session_id = data['session_id']
-    message = data['message']  # 获取用户发送的消息
+    message = data['message']
 
     # 获取当前会话的chathistory条目
     session_entry = Session.query.filter_by(session_id=session_id, user_id=user_id).first()
@@ -129,12 +117,12 @@ async def send_message():
         session_entry.summary = summarize_dialog(message)
         db.session.commit()
 
-    # 保存用户发送的消息到聊天历史记录
+    # 保存用户信息
     user_chat = ChatHistory(session_id=session_id, message=message, sender='User')
     db.session.add(user_chat)
     db.session.commit()
 
-    # 获取当前会话的所有历史记录
+    # 获取当前会话的历史记录
     history = ChatHistory.query.filter_by(session_id=session_id).all()
     chat_history = [{'message': chat.message, 'sender': chat.sender} for chat in history]
 
@@ -143,34 +131,30 @@ async def send_message():
     app.logger.debug(history_messages)
 
     # 生成流式回复
-    return Response(RAG_stream(message, history_messages), mimetype='text/plain')
+    return Response(RAG_stream(message,history_messages),mimetype = 'text/plain')
 
-
-# 保存AI回复
 @app.route('/save_answer', methods=['POST'])
 def save_answer():
     data = request.json
     session_id = data['session_id']
-    answer = data['answer']  # 从前端请求获取AI的回复
+    answer = data['answer']
     try:
         ai_chat = ChatHistory(session_id=session_id, message=answer, sender='AI')
         db.session.add(ai_chat)
         db.session.commit()
-        return jsonify({'status': 'success'}), 200
+        return jsonify({'status': 'success'}),200
     except Exception as e:
         # 如果出现异常，返回错误响应
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message':str(e)}),500
 
 
-# 更新会话概要
 @app.route('/update_summary/<session_id>', methods=['GET'])
 def update_summary(session_id):
     session_entry = Session.query.filter_by(session_id=session_id).first()
     summary = session_entry.summary
-    return jsonify({'session_id': session_id, 'summary': summary})
+    return jsonify({'session_id':session_id,'summary': summary})
 
 
-# 获取会话历史记录
 @app.route('/get_history/<session_id>', methods=['GET'])
 @jwt_required()
 def get_history(session_id):
@@ -184,7 +168,6 @@ def get_history(session_id):
     return jsonify({'history': history})
 
 
-# 获取用户所有会话
 @app.route('/get_sessions', methods=['GET'])
 @jwt_required()
 def get_sessions():
@@ -192,7 +175,7 @@ def get_sessions():
     sessions = Session.query.filter_by(user_id=user_id).all()
     return jsonify({'sessions': [{'session_id': s.session_id, 'summary': s.summary} for s in sessions]})
 
-# 删除会话
+
 @app.route('/delete_session/<session_id>', methods=['DELETE'])
 @jwt_required()
 def delete_session(session_id):
@@ -206,13 +189,12 @@ def delete_session(session_id):
     db.session.commit()
     return jsonify({'message': f'Session {session_id} deleted'}), 200
 
-# 流式返回生成的内容
 @app.route('/stream', methods=['POST'])
 def stream_output():
     data = request.get_json()
     message = data.get('message')
     if data:
-        return Response(RAG_stream(message, []), mimetype='text/plain')
+        return Response(RAG_stream(message,[]), mimetype='text/plain')
     return "没有内容"
 
 @app.route('/get_links', methods=['GET'])
@@ -224,3 +206,4 @@ def get_link():
 
 if __name__ == '__main__':
     app.run(debug=True)
+

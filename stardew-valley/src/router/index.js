@@ -3,16 +3,16 @@ import HomeView from '../views/HomeView.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Assistant from '../views/Assistant.vue';
-
-import GuessLike from "../views/GuessLike.vue";
+import GuessLike from '../views/GuessLike.vue';
+import RoleShow from "../views/RoleShow.vue";
+import RoleMatching from "../views/RoleMatching.vue";
 
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView,
-    //component: GuessLike,
+    component: HomeView
   },
   {
     path: '/login',
@@ -34,6 +34,17 @@ const routes = [
     path: '/GuessLike',
     name: 'GuessLike',
     component: GuessLike,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/RoleShow',
+    name: 'RoleShow',
+    component: RoleShow,
+    meta: { requiresAuth: true }
+  },{
+    path: '/RoleMatching',
+    name: 'RoleMatching',
+    component: RoleMatching,
     meta: { requiresAuth: true }
   },
 

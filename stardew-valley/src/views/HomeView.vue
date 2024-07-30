@@ -1,4 +1,5 @@
 <template>
+  <twinklestars></twinklestars>
   <div class="background">
     <img src="../assets/homeview/stardewvalley_character.png" class="logo" />
     <img src="../assets/homeview/ballon.png" class="floating balloon" />
@@ -84,7 +85,11 @@ transform: scale(1.1);
 
 
 <script>
+import twinklestars from '../components/twinklestars.vue'
 export default {
+  components:{
+    twinklestars
+  },
 methods: {
   goto(route) {
     this.$router.push(route);

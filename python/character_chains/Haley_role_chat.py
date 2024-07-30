@@ -1,10 +1,7 @@
 import os
-from typing import Dict, Any, List
-
-from langchain.chains.conversation.base import ConversationChain
-from langchain.chains.llm import LLMChain
-from langchain.memory import ConversationSummaryMemory, ChatMessageHistory, ConversationBufferMemory
+from langchain_core.callbacks import CallbackManager, StreamingStdOutCallbackHandler
 from langchain_core.messages import SystemMessage, AIMessage, BaseMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, \
     SystemMessagePromptTemplate, FewShotChatMessagePromptTemplate
@@ -18,7 +15,13 @@ os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1
 # zhipu
 from langchain_community.chat_models import ChatZhipuAI
 
-zhipuai_chat_model = ChatZhipuAI(model="glm-4")
+zhipuai_chat_model = ChatZhipuAI(
+    model="glm-4",
+    temperature=0.5,
+    streaming=True,
+    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+)
+
 chat_model = zhipuai_chat_model
 movie_template = """
 《勇敢的小树》：一部家庭动画喜剧，讲述了一颗小树苗经历了一番神奇的冒险后成长为一棵树的故事！
@@ -31,7 +34,7 @@ movie_template = """
 《祖祖城特快列车》：一部备受喜爱的经典电影，经过精心重置，适合现代影院。
 """
 role_template = """
-注意：请记住以下是你的人物设定,接下来你要用中文以这种人设和我展开对话，只需要输出回复内容；
+请注意：请记住以下是你的人物设定,接下来你要用中文以这种人设和第一次见面的我展开对话，只需要输出回复内容！；
  Role: 海莉 : 扮演星露谷物语中的村民，生活富裕，曾经在高中很受欢迎，性格自负，常以自我为中心，但内心可能隐藏着风趣和开放的一面。\n
  Role-information:生日：春季 14日;位置：鹈鹕镇;地址：柳巷2号;亲属：Emily （艾米丽）（姐姐）;朋友：Alex（亚历克斯）;
  喜好：粉红蛋糕、向日葵、水果沙拉、椰子、兔子的脚、珍珠、黄金南瓜、魔法糖冰棍;
@@ -46,6 +49,8 @@ role_template = """
  Workflow:理解并分析海莉的角色背景和性格特点。
 编写对话，体现海莉的自负和以自我为中心的性格。
 在对话中逐渐引入海莉对生活深层意义的探索。
+
+请参考以下对话例子和历史问答内容，进行回答
 """
 
 system_prompt_role = SystemMessagePromptTemplate.from_template(role_template)
@@ -80,25 +85,20 @@ prompt = ChatPromptTemplate.from_messages(
         system_prompt_role,
         few_shot_prompt,
         MessagesPlaceholder(variable_name="chat_history"),
-        HumanMessagePromptTemplate.from_template("{question}"),
+        HumanMessagePromptTemplate.from_template("{question}，海莉："),
     ]
 )
-# 创建ConversationBufferMemory
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
 # 初始化链
-chain: LLMChain = LLMChain(llm=chat_model, prompt=prompt, memory=memory)
+parser = StrOutputParser()
+chain = prompt | chat_model | parser
 
-# file_path = './chat.txt'
-# with open(file_path, 'r', encoding='utf-8') as file:
-#     doc = file.read()
-
-print("try chat....")
-while True:
-    human_message = input("请输入问题（输入 'end' 结束）：")
-    if human_message == "end":
-        break
-    response = chain.invoke({"question": human_message})
-    ai_message = response['text']
-    print("回答：", ai_message)
-print("END....")
+# print("try chat....")
+# while True:
+#     human_message = input("请输入问题（输入 'end' 结束）：")
+#     if human_message == "end":
+#         break
+#     for chunk in chain.stream({"question": human_message}):
+#         print(chunk, end="//",flush=True)  # 实时输出每个文本块
+#     print('\n')
+# print("END....")

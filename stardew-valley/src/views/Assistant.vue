@@ -26,9 +26,28 @@
         </div>
       </div>
     </div>
+    
     <component :is="currentComponent"></component>
     <div :class="['background', currentBackground]">
       <div class="chat-container">
+        <div class="top-boxes">
+          <div class="top-box box-one">
+            <img src="../assets/assistant/robot_icon.png" class="icon" />
+            <p class="suggestion-text">智能助手</p>
+          </div>
+          <div class="top-box" @click="goto('/GuessLike')">
+            <img src="../assets/guesslike/TV.png" class="icon" />
+            <p class="suggestion-text">猜你喜欢</p>
+          </div>
+          <div class="top-box" @click="goto('/RoleShow')">
+            <img src="../assets/role/Speech_bubble.png" class="icon" />
+            <p class="suggestion-text">角色对话</p>
+          </div>
+          <div class="top-box" @click="goto('/RoleMatching')">
+            <img src="../assets/guesslike/Love_Icon.png" class="icon" />
+            <p class="suggestion-text">伴侣匹配</p>
+          </div>
+        </div>
         <div class="left-column">
           <button class="new-session" @click="startNewSession">新会话</button>
           <div>
@@ -121,6 +140,9 @@ export default {
     this.checkAuth();
   },
   methods: {
+    goto(route) {
+      this.$router.push(route);
+    },
     toggleDropdown() {
       this.showDropdown = !this.showDropdown;
     },
@@ -465,17 +487,67 @@ nav img {
   position: relative;
   padding: 20px;
   border-radius: 20px;
-  background-color: #fdbc72b7;
+  background-color: #fcc587f0;
   box-shadow:
     inset #8a390a 0 0 0 2px,
     inset #ba4d0d 0 0 0 5px,
     inset #ffa845 0 0 0 9px,
     inset #cd710f 0 0 0 12px,
     inset #ba4d0d 0 0 0 14px,
-    inset #8a390a 0 0 0 16px,
+    inset #8a390a 0 0 0 16px;
 }
 
+.top-boxes {
+  display: flex;
+  position: absolute;
+  justify-content: space-between;
+  bottom: 100%; /* 调整这个控制与 chat-container 顶部的距离 */
+  left: 0;
+  right: 0;
+  padding: 0 20%;
+  gap: 10px; /* 添加方框之间的间距 */
+  
+}
+
+.top-box {
+  width: 30%;
+  height: 35px;
+  background-color: #fcc587fe;
+  box-shadow:
+  -1px 0px 0 0 #8a390a,
+  -2px 0px 0 0 #cd710f, /* 左边阴影 */
+  -3px 0px 0 0 #ffa845,
+  -4px 0px 0 0 #cd710f,
+  -5px 0px 0 0 #8a390a, 
+  
+  1px 0px 0 0 #8a390a,/* 右边阴影 */
+  2px 0px 0 0 #cd710f, 
+  3px 0px 0 0 #ffa845,
+  4px 0px 0 0 #cd710f,
+  5px 0px 0 0 #8a390a, 
+
+
+  inset 0px 1px 0 0 #8a390a,/* 上边阴影 */
+  inset 0px 2px 0 0 #cd710f, 
+  inset 0px 3px 0 0 #ffa845,
+  inset 0px 4px 0 0 #cd710f,
+  inset 0px 5px 0 0 #8a390a;
+  cursor: pointer;
+  transform: translateY(16px); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box-one {
+  cursor:auto;
+  height: 51px;
+ 
+}
+
+
 .left-column {
+  position: relative;
   width: 30%;
   padding: 20px;
   height: 81%;
@@ -498,7 +570,7 @@ nav img {
 }
 
 .new-session {
-  width: 94%;
+  width: 100%;
   font-size: 1.02em;
   box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
 }
@@ -508,17 +580,25 @@ nav img {
   padding-left: 1%;
   color: #8a390a;
   font-size: 1.2em;
+  text-shadow: 2px 2px 2px #5c190b3d;
 }
 
 .session-list {
+  position: absolute;
   list-style-type: none;
   padding: 0;
+  overflow-y: auto;
+  scrollbar-color: #8a390a rgba(255, 255, 255, 0.9);
+  height: 70%;
+  width: 88%;
+  border-radius: 10px;
 }
 
 .session-item {
   display: flex;
   align-items: center;
   margin-bottom: 15px;
+  margin-right: 15px;
 }
 
 .session-button {
@@ -552,8 +632,8 @@ nav img {
 }
 
 .delete-button {
-  padding: 16px;
-  margin-left: 10px;
+  padding: 15px;
+  margin-left: 15px;
   background: url('../assets/assistant/delete.png') no-repeat center center;
 
   border: 2px solid#f8965eab;
@@ -562,7 +642,7 @@ nav img {
 }
 
 .delete-button:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .background {
@@ -732,5 +812,17 @@ button:hover {
   width: 15px;
   height: 15px;
   cursor: pointer;
+}
+
+.icon{
+  width: 25px;
+  height: 25px;
+}
+
+.suggestion-text {
+  font-size: 16px;
+  color: #8a390a;
+  font-weight: bold;
+  text-shadow: 2px 2px 2px #5c190b3d;
 }
 </style>

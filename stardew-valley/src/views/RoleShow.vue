@@ -437,6 +437,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 /* Add your styles here */
 </style>
@@ -659,12 +660,20 @@ nav img {
 }
 
 .grid-image {
-  width: 45%;
+  padding: 7%;
+  width: 48%;
   height: auto;
   border-radius: 10%;
-  border: 2px solid #9c400a86;
+  //border: 2px solid #9c400a86;
   box-shadow: 4px 4px 3px rgba(0, 0, 0, 0.2);
   background-color: #f2dec9b7;
+  box-shadow:
+    inset #8a390a 0 0 0 1px,
+    inset #ba4d0d 0 0 0 2px,
+    inset #ffa845 0 0 0 3px,
+    inset #cd710f 0 0 0 4px,
+    inset #ba4d0d 0 0 0 5px,
+    inset #8a390a 0 0 0 6px;
 }
 
 .grid-item {

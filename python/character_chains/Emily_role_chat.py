@@ -95,16 +95,16 @@ prompt = ChatPromptTemplate.from_messages(
 
 parser = StrOutputParser()
 chain = prompt | chat_model | parser
-
-chat_history = []
-print("try chat....")
-while True:
-    human_message = input("请输入问题（输入 'end' 结束）：")
-    if human_message == "end":
-        break
-    response_text = ""
-    response = chain.invoke({"question": human_message, "chat_history": chat_history})
-    print(response)
-    chat_history.append(HumanMessage(content=response))
-    chat_history.append(AIMessage(content=response_text))
-print("END....")
+#
+# chat_history = []
+# print("try chat....")
+# while True:
+#     human_message = input("请输入问题（输入 'end' 结束）：")
+#     if human_message == "end":
+#         break
+#     response_text = ""
+#     response = chain.invoke({"question": human_message, "chat_history": chat_history})
+#     print(response)
+#     chat_history.append(HumanMessage(content=response))
+#     chat_history.append(AIMessage(content=response_text))
+# print("END....")

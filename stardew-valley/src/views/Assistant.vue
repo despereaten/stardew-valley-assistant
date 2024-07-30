@@ -26,7 +26,7 @@
         </div>
       </div>
     </div>
-    
+
     <component :is="currentComponent"></component>
     <div :class="['background', currentBackground]">
       <div class="chat-container">
@@ -69,7 +69,7 @@
             <div v-if="currentSessionId">
               <p v-for="msg in chatMessages" :key="msg.id" style="padding: 1px 2%;"
                 :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
-                <img v-if="msg.sender === 'User'" class="avatar" src="../assets/assistant/Abigail_Icon.png"
+                <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
                 <MarkdownRenderer :markdown="msg.message" />
@@ -501,12 +501,14 @@ nav img {
   display: flex;
   position: absolute;
   justify-content: space-between;
-  bottom: 100%; /* 调整这个控制与 chat-container 顶部的距离 */
+  bottom: 100%;
+  /* 调整这个控制与 chat-container 顶部的距离 */
   left: 0;
   right: 0;
   padding: 0 20%;
-  gap: 10px; /* 添加方框之间的间距 */
-  
+  gap: 10px;
+  /* 添加方框之间的间距 */
+
 }
 
 .top-box {
@@ -514,35 +516,38 @@ nav img {
   height: 35px;
   background-color: #fcc587fe;
   box-shadow:
-  -1px 0px 0 0 #8a390a,
-  -2px 0px 0 0 #cd710f, /* 左边阴影 */
-  -3px 0px 0 0 #ffa845,
-  -4px 0px 0 0 #cd710f,
-  -5px 0px 0 0 #8a390a, 
-  
-  1px 0px 0 0 #8a390a,/* 右边阴影 */
-  2px 0px 0 0 #cd710f, 
-  3px 0px 0 0 #ffa845,
-  4px 0px 0 0 #cd710f,
-  5px 0px 0 0 #8a390a, 
+    -1px 0px 0 0 #8a390a,
+    -2px 0px 0 0 #cd710f,
+    /* 左边阴影 */
+    -3px 0px 0 0 #ffa845,
+    -4px 0px 0 0 #cd710f,
+    -5px 0px 0 0 #8a390a,
+
+    1px 0px 0 0 #8a390a,
+    /* 右边阴影 */
+    2px 0px 0 0 #cd710f,
+    3px 0px 0 0 #ffa845,
+    4px 0px 0 0 #cd710f,
+    5px 0px 0 0 #8a390a,
 
 
-  inset 0px 1px 0 0 #8a390a,/* 上边阴影 */
-  inset 0px 2px 0 0 #cd710f, 
-  inset 0px 3px 0 0 #ffa845,
-  inset 0px 4px 0 0 #cd710f,
-  inset 0px 5px 0 0 #8a390a;
+    inset 0px 1px 0 0 #8a390a,
+    /* 上边阴影 */
+    inset 0px 2px 0 0 #cd710f,
+    inset 0px 3px 0 0 #ffa845,
+    inset 0px 4px 0 0 #cd710f,
+    inset 0px 5px 0 0 #8a390a;
   cursor: pointer;
-  transform: translateY(16px); 
+  transform: translateY(16px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .box-one {
-  cursor:auto;
+  cursor: auto;
   height: 51px;
- 
+
 }
 
 
@@ -814,7 +819,7 @@ button:hover {
   cursor: pointer;
 }
 
-.icon{
+.icon {
   width: 25px;
   height: 25px;
 }

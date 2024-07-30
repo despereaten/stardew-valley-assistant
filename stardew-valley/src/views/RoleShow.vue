@@ -91,7 +91,7 @@
             <div v-if="currentSessionId">
               <p v-for="msg in chatMessages" :key="msg.id" style="padding: 1px 2%;"
                 :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
-                <img v-if="msg.sender === 'User'" class="avatar" src="../assets/assistant/Abigail_Icon.png"
+                <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" :src="getIconForCurrentCard()" alt="Assistant Avatar">
                 <MarkdownRenderer :markdown="msg.message" />
@@ -244,6 +244,16 @@ export default {
           return Harvey_Icon;
         case 'Leah':
           return Leah_Icon;
+        case 'Sam':
+          return Sam_Icon;
+        case 'Sebastia':
+          return Sebastia_Icon;
+        case 'Shane':
+          return Shane_Icon;
+        case 'Penny':
+          return Penny_Icon;
+        case 'Maru':
+          return Maru_Icon;
       }
     },
     updateCard(character) {

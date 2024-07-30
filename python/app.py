@@ -5,7 +5,7 @@ import importlib
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from RAGTest import get_response, summarize_dialog, RAG_stream
-from get_links import get_link
+from GetLinks import get_link
 import uuid
 
 app = Flask(__name__)
@@ -353,7 +353,7 @@ def chat_stream(input, history, character_id):
 
 
 # zmj
-from Role_Match import answers, roles, questions, zhipuai_chat_model
+from RoleMatch import answers, roles, questions, zhipuai_chat_model
 
 
 def generate_role_match_stream():

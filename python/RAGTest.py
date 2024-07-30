@@ -1,11 +1,30 @@
+"""
+√为已实现，×为未实现
+计划实现功能：
+    1. 构建retrieval chain，回答用户提出的问题 √
+    2. 流式传输
+        - 基本流式传输 √
+        - 异步 ×
+    3. 提高速度 ×
+    4. 提高精度 ×
+    5. langsmith接入调试
+        - 延迟监控，token监控 √
+        - 准确度评估 ×
+    6. customer模式尝试 ×
+    7. agent代理提高精度 ×
+    8. llm封装尝试 ×
+    9. 更换模型 ×
+
+用户体验：
+    1. 取消正在回答中加载动画，改成浮动的圆形光标 ×
+"""
 import os
 import re
 
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
 # WebBaseLoader --BeautifulSoup4
-os.environ[
-    "USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
+os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
 os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1695519feadabec772"
 
 # zhipu
@@ -15,22 +34,32 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 
 zhipuai_chat_model = ChatZhipuAI(
     model="glm-4",
-    temperature=0.5,
-    streaming=True,
+    temperature = 0.5,
+    streaming = True,
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
 )
 
 # 完成模型的选用,封装为chat_model
 chat_model = zhipuai_chat_model
 
+# os.environ["LANGCHAIN_TRACING_V2"] = "true"
+# os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+# os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
+# os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
+
+
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name="D:\PythonProjects\models\m3e-base",
+embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
+# embeddings = HuggingFaceEmbeddings(model_name= "models\m3e-base",
+#                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-vector = FAISS.load_local("./faiss_index",
+# vector = FAISS.load_local("./faiss_index",
+#                           embeddings, allow_dangerous_deserialization=True)
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
                           embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
@@ -82,7 +111,6 @@ def get_response(human_message, chat_history):
     chat_history.append(AIMessage(content=ai_message))
     return ai_message
 
-
 def summarize_dialog(human_message):
     response = retrieval_chain.invoke({
         "chat_history": [],  # 仅处理当前输入
@@ -98,7 +126,6 @@ def summarize_dialog(human_message):
     summary = response["answer"]
     # print(summary)
     return summary
-
 
 def get_links(human_message):
     response = retrieval_chain.invoke({
@@ -130,7 +157,7 @@ def get_links(human_message):
     return links
 
 
-def RAG_stream(input, chat_history):
+def RAG_stream(input,chat_history):
     for chunk in retrieval_chain.stream({"chat_history": chat_history, "input": input}):
         # delta_content = chunk.choices[0].delta.input
         delta_content = chunk.get("answer")

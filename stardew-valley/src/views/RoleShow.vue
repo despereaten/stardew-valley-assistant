@@ -244,217 +244,214 @@ export default {
           return Harvey_Icon;
         case 'Leah':
           return Leah_Icon;
-        default:
-          return Default_Icon; // 默认图片，如果没有匹配的 name
       }
-    }
-  },
-  updateCard(character) {
-    this.currentCard = character;
-  },
-  //wyx:创建新对话
-  startChatting() {
-    this.isChatting = true;
-    localStorage.setItem('isChatting', 'true');
+    },
+    updateCard(character) {
+      this.currentCard = character;
+    },
+    //wyx:创建新对话
+    startChatting() {
+      this.isChatting = true;
+      localStorage.setItem('isChatting', 'true');
 
-    axios
-      .post('http://localhost:5000/new_chat_session', {
-        post_character_id: this.currentCard.name
-      })
-      .then(response => {
-        const session = response.data;//新的 session只会传入session_id的信息,前端session只包含这信息
-        //this.sessions.push(session);
-        this.selectSession(session.session_id);
-        // 保存当前会话ID到 localStorage
-        localStorage.setItem('currentSessionId', session.session_id);
-        console.log("add dialog:", session.session_id);
-      })
-      .catch(error => {
-        console.error('Error creating new session:', error);
+      axios
+        .post('http://localhost:5000/new_chat_session', {
+          post_character_id: this.currentCard.name
+        })
+        .then(response => {
+          const session = response.data;//新的 session只会传入session_id的信息,前端session只包含这信息
+          //this.sessions.push(session);
+          this.selectSession(session.session_id);
+          // 保存当前会话ID到 localStorage
+          localStorage.setItem('currentSessionId', session.session_id);
+          console.log("add dialog:", session.session_id);
+        })
+        .catch(error => {
+          console.error('Error creating new session:', error);
+        });
+    },
+    selectSession(sessionId) {
+      this.currentSessionId = sessionId;
+      this.loadHistory(sessionId);
+      console.log("select dialog:", sessionId);
+    },
+    loadHistory(sessionId) {
+      axios
+        .get(`http://localhost:5000/get_history/${sessionId}`)
+        .then(response => {
+          this.chatMessages = response.data.history;
+          console.log("load dialog:", sessionId);
+        })
+        .catch(error => {
+          console.error('Error loading history:', error);
+        });
+    },
+    scrollToBottom() {
+      const responseBox = this.$refs.responseBox;
+      responseBox.scrollTop = responseBox.scrollHeight;
+    },
+    //wyx:发送对话
+    async sendChatMessage() {
+      if (this.userInput.trim() === '') return;
+      // 显示等待动画
+      //document.getElementById('loading').style.display = 'flex';
+      const messageToSend = this.userInput;
+      console.log("messageToSend", messageToSend);
+      this.controller = new AbortController();
+      this.response = '';
+      this.isStopped = false;
+      this.isStreaming = true;
+
+      this.userInput = '';
+
+      this.chatMessages.push({
+        id: Date.now(),
+        sender: 'User',
+        message: messageToSend
       });
-  },
-  selectSession(sessionId) {
-    this.currentSessionId = sessionId;
-    this.loadHistory(sessionId);
-    console.log("select dialog:", sessionId);
-  },
-  loadHistory(sessionId) {
-    axios
-      .get(`http://localhost:5000/get_history/${sessionId}`)
-      .then(response => {
-        this.chatMessages = response.data.history;
-        console.log("load dialog:", sessionId);
-      })
-      .catch(error => {
-        console.error('Error loading history:', error);
-      });
-  },
-  scrollToBottom() {
-    const responseBox = this.$refs.responseBox;
-    responseBox.scrollTop = responseBox.scrollHeight;
-  },
-  //wyx:发送对话
-  async sendChatMessage() {
-    if (this.userInput.trim() === '') return;
-    // 显示等待动画
-    //document.getElementById('loading').style.display = 'flex';
-    const messageToSend = this.userInput;
-    console.log("messageToSend", messageToSend);
-    this.controller = new AbortController();
-    this.response = '';
-    this.isStopped = false;
-    this.isStreaming = true;
 
-    this.userInput = '';
-
-    this.chatMessages.push({
-      id: Date.now(),
-      sender: 'User',
-      message: messageToSend
-    });
-
-    this.$nextTick(() => {
-      this.scrollToBottom();
-    });
-
-    // 初始化 AI 消息
-    const aiMessageId = Date.now() + 1;
-    this.chatMessages.push({
-      id: aiMessageId,
-      sender: 'AI',
-      message: ''
-    });
-
-    this.$nextTick(() => {
-      this.scrollToBottom();
-    });
-
-    const response = await fetch('http://localhost:5000/send_chat_message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // 添加token
-      },
-      body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
-      signal: this.controller.signal
-    });
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    // 隐藏等待动画
-    //document.getElementById('loading').style.display = 'none';
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
-
-    //以下这段不正常(只运行了一次)：
-    while (true) {
-      //if (this.isStopped) break;
-      const { done, value } = await reader.read();
-      const text = decoder.decode(value);
-      console.log("value:" + value)
-      this.response += text
-      if (done) { break; }
-
-      // 更新 AI 消息内容
-      if (aiMessageIndex !== -1) {
-        this.chatMessages[aiMessageIndex].message = this.response;
-        console.log("response" + this.response)
-      }
       this.$nextTick(() => {
         this.scrollToBottom();
       });
-    }
 
-    this.isStreaming = false;
-    // 在消息完全接收后或流式输出停止后保存答案
-    if (!this.isStopped) {
-      this.saveAnswer(this.response);
-      console.log("保存答案")
-    }
-  },
-
-  async saveAnswer(answer) {
-    try {
-      await axios.post('http://localhost:5000/save_answer', {
-        session_id: this.currentSessionId,
-        answer: answer
+      // 初始化 AI 消息
+      const aiMessageId = Date.now() + 1;
+      this.chatMessages.push({
+        id: aiMessageId,
+        sender: 'AI',
+        message: ''
       });
-    } catch (error) {
-      console.error('Error saving answer:', error);
-    }
-  },
-  //wyx:
-  cancelChatting(sessionId) {
-    this.isChatting = false;
-    localStorage.removeItem('isChatting');
 
-    axios
-      .delete(`http://localhost:5000/delete_session/${sessionId}`)
-      .then(() => {
-        if (this.currentSessionId === sessionId) {
-          this.currentSessionId = null;
-          this.chatMessages = [];
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
+
+      const response = await fetch('http://localhost:5000/send_chat_message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // 添加token
+        },
+        body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
+        signal: this.controller.signal
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      // 隐藏等待动画
+      //document.getElementById('loading').style.display = 'none';
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
+
+      //以下这段不正常(只运行了一次)：
+      while (true) {
+        //if (this.isStopped) break;
+        const { done, value } = await reader.read();
+        const text = decoder.decode(value);
+        console.log("value:" + value)
+        this.response += text
+        if (done) { break; }
+
+        // 更新 AI 消息内容
+        if (aiMessageIndex !== -1) {
+          this.chatMessages[aiMessageIndex].message = this.response;
+          console.log("response" + this.response)
         }
-        console.log("delete dialog:", sessionId);
-      })
-      .catch(error => {
-        console.error('Error deleting session:', error);
-      });
-  },
-  goto(path) {
-    this.$router.push(path);
-  },
-  showProfile() {
-    clearTimeout(this.hideProfileTimer);
-    this.showProfile = true;
-  },
-  hideProfile() {
-    this.hideProfileTimer = setTimeout(() => {
-      this.showProfile = false;
-    }, 1000);
-  },
-  logout() {
-    localStorage.removeItem('token');
-    this.$router.push('/Login');
-  },
-  switchAccount() {
-    localStorage.removeItem('token');
-    this.$router.push('/Login');
-  },
-  async stopStreaming() {
-    if (this.controller) {
-      this.controller.abort();
-      this.controller = new AbortController();
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
+      }
+
       this.isStreaming = false;
+      // 在消息完全接收后或流式输出停止后保存答案
+      if (!this.isStopped) {
+        this.saveAnswer(this.response);
+        console.log("保存答案")
+      }
+    },
+
+    async saveAnswer(answer) {
+      try {
+        await axios.post('http://localhost:5000/save_answer', {
+          session_id: this.currentSessionId,
+          answer: answer
+        });
+      } catch (error) {
+        console.error('Error saving answer:', error);
+      }
+    },
+    //wyx:
+    cancelChatting(sessionId) {
+      this.isChatting = false;
+      localStorage.removeItem('isChatting');
+
+      axios
+        .delete(`http://localhost:5000/delete_session/${sessionId}`)
+        .then(() => {
+          if (this.currentSessionId === sessionId) {
+            this.currentSessionId = null;
+            this.chatMessages = [];
+          }
+          console.log("delete dialog:", sessionId);
+        })
+        .catch(error => {
+          console.error('Error deleting session:', error);
+        });
+    },
+    goto(path) {
+      this.$router.push(path);
+    },
+    showProfile() {
+      clearTimeout(this.hideProfileTimer);
+      this.showProfile = true;
+    },
+    hideProfile() {
+      this.hideProfileTimer = setTimeout(() => {
+        this.showProfile = false;
+      }, 1000);
+    },
+    logout() {
+      localStorage.removeItem('token');
+      this.$router.push('/Login');
+    },
+    switchAccount() {
+      localStorage.removeItem('token');
+      this.$router.push('/Login');
+    },
+    async stopStreaming() {
+      if (this.controller) {
+        this.controller.abort();
+        this.controller = new AbortController();
+        this.isStreaming = false;
+      }
+    },
+    copyToClipboard(message) {
+      navigator.clipboard.writeText(message).then(() => {
+        console.log('Message copied to clipboard');
+      }, (err) => {
+        console.error('Could not copy text: ', err);
+      });
     }
   },
-  copyToClipboard(message) {
-    navigator.clipboard.writeText(message).then(() => {
-      console.log('Message copied to clipboard');
-    }, (err) => {
-      console.error('Could not copy text: ', err);
-    });
-  }
-},
-mounted() {
-  if (!localStorage.getItem('token')) {
-    this.$router.push('/Login');
-  }
+  mounted() {
+    if (!localStorage.getItem('token')) {
+      this.$router.push('/Login');
+    }
 
-  // 检查是否处于聊天状态
-  if (localStorage.getItem('isChatting')) {
-    this.isChatting = true;
-  }
-  // 获取当前会话ID
-  this.currentSessionId = localStorage.getItem('currentSessionId');
+    // 检查是否处于聊天状态
+    if (localStorage.getItem('isChatting')) {
+      this.isChatting = true;
+    }
+    // 获取当前会话ID
+    this.currentSessionId = localStorage.getItem('currentSessionId');
 
-  // 如果有当前会话ID，则加载历史记录
-  if (this.currentSessionId) {
-    this.loadHistory(this.currentSessionId);
+    // 如果有当前会话ID，则加载历史记录
+    if (this.currentSessionId) {
+      this.loadHistory(this.currentSessionId);
+    }
   }
-}
 };
 </script>
 

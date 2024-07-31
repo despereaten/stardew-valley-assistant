@@ -1,5 +1,7 @@
+      
 <template>
   <twinklestars></twinklestars>
+  <FloatingImage />
   <div class="background">
     <img src="../assets/homeview/stardewvalley_character.png" class="logo" />
     <img src="../assets/homeview/ballon.png" class="floating balloon" />
@@ -58,11 +60,14 @@ background-size: cover;
   width: 20%;
   cursor: pointer;
   transition: transform 0.3s ease;
+  z-index: 100;
 }
 
 .start-button:hover {
 transform: scale(1.1);
 }
+
+
 
 @keyframes fadeIn {
   0%{
@@ -81,14 +86,25 @@ transform: scale(1.1);
     transform: translate(0, 15px);
   }
 }
+
+
 </style>
 
 
 <script>
 import twinklestars from '../components/twinklestars.vue'
+import FloatingImage from '../components/FloatingImage.vue';
+
+
 export default {
   components:{
-    twinklestars
+    twinklestars,
+    FloatingImage,
+  },
+  data(){
+    return {
+      images: []
+    };
   },
 methods: {
   goto(route) {
@@ -98,3 +114,5 @@ methods: {
 }
 
 </script>
+
+    

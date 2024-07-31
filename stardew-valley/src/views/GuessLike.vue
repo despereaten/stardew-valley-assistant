@@ -1,3 +1,4 @@
+      
 <template>
   <nav>
     <ul>
@@ -46,7 +47,10 @@
         </div>
 
         <div class="response-box" ref="responseBox">
-          <button class="refresh" @click="updateLinks"><img src="../assets/guesslike/refresh.png" class="refresh-icon" />刷新</button>
+          <button class="refresh" @click="updateLinks">
+          <img :class="{'refresh-icon': true, 'loading': loading}" src="../assets/guesslike/refresh.png" />
+          刷新
+          </button>
           <h2>猜你喜欢</h2>
           <p>以下网址是根据您的提问来推荐的网站，欢迎您的访问！</p>
           <div class="card-container">
@@ -84,6 +88,7 @@ data() {
     username: localStorage.getItem('username'),
     currentBackground: 'background-winter',
     currentComponent: 'snow',
+    loading: false, //new loading animation
   };
 },
 methods: {
@@ -106,13 +111,16 @@ methods: {
     }
   },
   async updateLinks(){
+    this.loading = true;
     try{
     const response = await axios.post('/generate_links');
     this.links = response.data.links;
     console.log("update links:",this.links);
     }catch (error){
       console.log('Error updating links:', error);
-    }
+    }finally {
+        this.loading = false;  //new set
+      }
   },
   changeBackground(type) {
     if (type === 'day') {
@@ -364,13 +372,17 @@ background-size: cover;
   width: 40%;
 }
 
+.loading {
+  animation: rotate 1s linear infinite;  // Only apply animation when loading
+}
+
 @keyframes rotate {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
 .refresh:hover .refresh-icon {
-  animation: rotate 1s linear infinite;
+  animation: none;  // No animation 
 }
 
 .button-container {
@@ -458,3 +470,5 @@ position: relative;
   margin-left: 10px;
 }
 </style>
+
+    

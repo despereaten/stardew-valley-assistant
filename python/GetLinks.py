@@ -94,7 +94,7 @@ prompt = PromptTemplate(
 def get_keywords(message_list):
     keywords = []
     for text in message_list:
-        keywords.extend(jieba.cut_for_search(text))
+        keywords.extend(jieba.lcut(text))
     print("jieba分词结果：",keywords)
     promptValue = prompt.format(user_input=f"{keywords}")
     # print("promptValue", promptValue)

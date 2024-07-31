@@ -80,7 +80,7 @@
           </div>
 
           <div class="input-box">
-            <textarea v-model="userInput" placeholder="请输入你的疑问..." @keydown.enter="sendMessage"></textarea>
+            <textarea v-model="userInput" placeholder="请输入你的疑问..." @keyup.enter="sendMessage"></textarea>
             <button v-if="!isStreaming" @click="sendMessage">发送</button>
             <button v-else @click="stopStreaming">暂停</button>
           </div>

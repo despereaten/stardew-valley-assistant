@@ -15,13 +15,14 @@ def get_link_list(key_lists):
         # 打开Baidu网站
         driver.get("https://www.baidu.com/")
         time.sleep(1)
-
+        print(driver.title,"open baidu successfully")
         for key in key_lists:
             search_box = driver.find_element(By.ID, "kw")
             search_box.clear()  # 清空搜索框
             search_box.send_keys(key)
             driver.find_element(By.ID, "su").click()
             time.sleep(1)
+            print("search for key: ",key)
             results = driver.find_elements(By.CSS_SELECTOR, "h3.t>a")
             for result in results:
                 # print(result.text)

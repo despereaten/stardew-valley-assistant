@@ -4,7 +4,7 @@ import requests
 import importlib
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from RAGTest import get_response, summarize_dialog, RAG_stream
+from RAGTest import summarize_dialog, RAG_stream
 from GetLinks import get_link
 import uuid
 

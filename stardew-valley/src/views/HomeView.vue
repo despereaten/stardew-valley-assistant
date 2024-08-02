@@ -1,7 +1,7 @@
-      
 <template>
   <twinklestars></twinklestars>
   <FloatingImage />
+  <butterfly />
   <div class="background">
     <img src="../assets/homeview/stardewvalley_character.png" class="logo" />
     <img src="../assets/homeview/ballon.png" class="floating balloon" />
@@ -10,7 +10,10 @@
     <img src="../assets/homeview/green_butterfly.png" class="green-butterfly" />
     <img src="../assets/homeview/purple_butterfly.png" class="purple-butterfly" />
     <img src="../assets/homeview/start.png" class="start-button" @click="goto('/Login')" />
+    <div class="click-area" @click="showbutterflies"></div>
+    <butterfly ref="butterfly" />
   </div>
+  
 </template>
 
 <style scoped>
@@ -67,7 +70,14 @@ background-size: cover;
 transform: scale(1.1);
 }
 
-
+.click-area {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+}
 
 @keyframes fadeIn {
   0%{
@@ -94,12 +104,13 @@ transform: scale(1.1);
 <script>
 import twinklestars from '../components/twinklestars.vue'
 import FloatingImage from '../components/FloatingImage.vue';
-
+import butterfly from '../components/butterfly.vue';
 
 export default {
   components:{
     twinklestars,
     FloatingImage,
+    butterfly,
   },
   data(){
     return {
@@ -109,10 +120,11 @@ export default {
 methods: {
   goto(route) {
     this.$router.push(route);
-  }
+  },
+  showbutterflies() {
+      this.$refs.butterfly.showImages();
+    }
 }
 }
 
 </script>
-
-    

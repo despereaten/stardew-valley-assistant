@@ -338,7 +338,7 @@ def send_chat_message():
 
 def chat_stream(input, history, character_id):
     #动态导入，根据名字导入对应链条
-    module_name = f"character_chains.{character_id}_role_chat"
+    module_name = f"character_chains.{character_id}RoleChat"
     character_module = importlib.import_module(module_name)
     # 获取模块中的 llmchain 对象
     llmchain = character_module.chain
@@ -359,12 +359,19 @@ from RoleMatch import answers, roles, questions, zhipuai_chat_model
 def generate_role_match_stream():
     with app.app_context():
         app.logger.debug(len(answers))
-        if len(answers) < len(questions):
-            next_question = questions[len(answers)]
+        if len(answers)==1:
+             global user_chose
+             user_chose=answers[0]
+             next_question = questions[len(answers)-1]
+             yield f'{next_question}'.encode('utf-8')
+        elif len(answers) < len(questions)+1:
+            next_question = questions[len(answers)-1]
             yield f'{next_question}'.encode('utf-8')
+            app.logger.debug(next_question)
         else:
             combined_answers = " ".join(answers)
-            prompt = f"根据以下回答，判断用户最适合的角色：\n\n回答：{combined_answers}\n\n角色定义：{roles}\n\n请给出用户最适合的角色并解释理由。"
+            prompt = f"回答在合适的地方带有emoji表情😀，让你的回答更生动有趣！我是一名星露谷玩家，但我在纠结选择星露谷的哪名角色进行攻略，根据以下回答，判断我最适合的角色：\n\n回答：{combined_answers}\n\n角色定义：{roles}\n\n请结合角色定义，给出我最适合的角色、百分比并解释理由（重点介绍），并且再给出三个适合的角色以及匹配的百分比（简单介绍）,注意！重点关注性取向:{user_chose}，如果我的回答的意思与男生相近，必须从男生角色中匹配，如果我的回答的意思与女生相近，必须从女生角色中匹配."
+            app.logger.debug(prompt)
             for chunk in zhipuai_chat_model.stream(input=prompt):
                 delta_content = chunk.content
                 if delta_content:
@@ -386,8 +393,11 @@ def role_match_send_message():
 
     if message is not None:
         app.logger.debug(len(answers))
-        if len(answers) < len(questions):
-            answers.append(message)
+        if len(answers) < len(questions)+1:
+            if(len(answers)==1):
+                answers.append(message)
+            else:
+                answers.append(questions[len(answers)-2]+message)
             return Response(generate_role_match_stream(), content_type='text/event-stream')
         else:
             answers = []

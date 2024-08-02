@@ -7,10 +7,6 @@
       <img src="../assets/assistant/Main_Logo_ZH.png" alt="标识" class="logo-icon">
     </ul>
   </nav>
-  <div id="loading" class="loading-container" style="display: none;">
-    <img src="../assets/assistant/Dog.gif" alt="Loading" class="loading-rabbit">
-    <p class="loading-text">正在回复中...</p>
-  </div>
   <div>
     <div class="button-container">
       <img src="../assets/assistant/clothes.png" class="clothes-icon "></img>
@@ -72,6 +68,11 @@
                 <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
+                <span v-if="msg.sender !== 'User' && msg.message === ''" class="loading-dots">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </span>
                 <MarkdownRenderer :markdown="msg.message" />
                 <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon"
                   @click="copyToClipboard(msg.message)" alt="Copy Icon">
@@ -237,8 +238,6 @@ export default {
     },
     async sendMessage() {
       if (this.userInput.trim() === '') return;
-      // 显示等待动画
-      document.getElementById('loading').style.display = 'flex';
       const messageToSend = this.userInput;
       console.log("messageToSend", messageToSend);
       this.controller = new AbortController();
@@ -279,8 +278,6 @@ export default {
         body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
         signal: this.controller.signal
       });
-      // 隐藏等待动画
-      document.getElementById('loading').style.display = 'none';
 
       const reader = response.body.getReader();
       const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
@@ -356,6 +353,49 @@ export default {
 </script>
 
 <style scoped lang="scss">
+//呼吸灯效果
+.loading-dots {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 5px;
+  /* 调整与头像的距离 */
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background-color: #333;
+  border-radius: 50%;
+  animation: blink 1.4s infinite both;
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+
+  0%,
+  80%,
+  100% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
 .user-profile-container {
   //border-radius: 50%;
   width: 25%;
@@ -426,6 +466,29 @@ nav img {
 }
 
 .loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1000;
+}
+
+.loading-rabbit {
+  width: 100px;
+  height: auto;
+}
+
+.loading-text {
+  color: #8a390a;
+  font-weight: bold;
+}
+
+loading-container {
   display: flex;
   align-items: center;
   justify-content: center;

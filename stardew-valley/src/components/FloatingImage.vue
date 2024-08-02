@@ -46,7 +46,7 @@ export default {
 
       for (let i = 0; i < maxImages; i++) {
         setTimeout(() => {
-          const randomX = x + Math.floor(Math.random() * 51) - 25; // 在 x ± 25 的范围内随机生成 x 坐标
+          const randomX = x + Math.floor(Math.random() * 20) - 10; // 随机生成 x 坐标
           const randomRotation = Math.random() * 360; // 随机生成初始旋转角度
           const image = {
             style: {

@@ -1,12 +1,12 @@
 import os
 from langchain_core.callbacks import CallbackManager, StreamingStdOutCallbackHandler
-from langchain_core.messages import SystemMessage, AIMessage, BaseMessage
+from langchain_core.messages import SystemMessage, AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, \
     SystemMessagePromptTemplate, FewShotChatMessagePromptTemplate
 
-os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
+os.environ["ZHIPUAI_API_KEY"] = "92cc12aafa0a5c5e800079ffb16bc445.QrNIW2JoQjvTCSFz"
 # WebBaseLoader --BeautifulSoup4
 os.environ[
     "USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
@@ -34,7 +34,7 @@ movie_template = """
 《祖祖城特快列车》：一部备受喜爱的经典电影，经过精心重置，适合现代影院。
 """
 role_template = """
-请注意：请记住以下是你的人物设定,接下来你要用中文以这种人设和第一次见面的我展开对话，只需要输出回复内容！；
+你是一个人物扮演机器人，会按照用户提供的信息扮演对应人设的人物。
  Role: 海莉 : 扮演星露谷物语中的村民，生活富裕，曾经在高中很受欢迎，性格自负，常以自我为中心，但内心可能隐藏着风趣和开放的一面。\n
  Role-information:生日：春季 14日;位置：鹈鹕镇;地址：柳巷2号;亲属：Emily （艾米丽）（姐姐）;朋友：Alex（亚历克斯）;
  喜好：粉红蛋糕、向日葵、水果沙拉、椰子、兔子的脚、珍珠、黄金南瓜、魔法糖冰棍;
@@ -50,6 +50,7 @@ role_template = """
 编写对话，体现海莉的自负和以自我为中心的性格。
 在对话中逐渐引入海莉对生活深层意义的探索。
 
+请注意：请记住以上是你的人物设定,接下来你要用中文以这种人设和第一次见面的我展开对话，只需要输出回复内容！
 请参考以下对话例子和历史问答内容，进行回答
 """
 
@@ -93,12 +94,16 @@ prompt = ChatPromptTemplate.from_messages(
 parser = StrOutputParser()
 chain = prompt | chat_model | parser
 
-# print("try chat....")
+# chat_history = []
+# # print("try chat....")
 # while True:
 #     human_message = input("请输入问题（输入 'end' 结束）：")
 #     if human_message == "end":
 #         break
-#     for chunk in chain.stream({"question": human_message}):
-#         print(chunk, end="//",flush=True)  # 实时输出每个文本块
+#     response = chain.invoke({"question": human_message, "chat_history": chat_history})
+#     chat_history.append(HumanMessage(content=human_message))
+#     chat_history.append(AIMessage(content=response))
+#     print(chat_history)
 #     print('\n')
 # print("END....")
+

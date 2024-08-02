@@ -109,6 +109,7 @@ cursor.close()
 connection.close()
 print("=======存储到MySQL数据库^===========")
 
+
 # 3.分词和向量化
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

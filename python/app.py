@@ -160,7 +160,7 @@ def save_answer():
     session_id = data['session_id']
     answer = data['answer']  # 从前端请求获取AI的回复
     try:
-        ai_chat = ChatHistory(session_id=session_id, message=answer, sender='AI')
+        ai_chat = ChatHistory(session_id=session_id, message=answer, sender='ai')
         db.session.add(ai_chat)
         db.session.commit()
         return jsonify({'status': 'success'}), 200
@@ -271,7 +271,7 @@ def new_chat_session():
     db.session.commit()
 
     initial_message = "嗨？"
-    new_chat_history = ChatHistory(message=initial_message, sender="", session_id=session_id)
+    new_chat_history = ChatHistory(message=initial_message, sender="ai", session_id=session_id)
     db.session.add(new_chat_history)
     db.session.commit()
 
@@ -320,20 +320,20 @@ def send_chat_message():
     character_id = session_entry.character_id
 
     # 保存用户发送的消息到聊天历史记录
-    user_chat = ChatHistory(session_id=session_id, message=message, sender='User')
+    user_chat = ChatHistory(session_id=session_id, message=message, sender='user')
     db.session.add(user_chat)
     db.session.commit()
 
-    # 获取当前会话的所有历史记录
+    # 获取当前会话的所有历史记录:修改
     history = ChatHistory.query.filter_by(session_id=session_id).all()
-    chat_history = [{'message': chat.message, 'sender': chat.sender} for chat in history]
+    chat_history = [{'content': chat.message, 'role': chat.sender} for chat in history]
 
     # 提取历史记录中的消息部分
-    history_messages = [chat['message'] for chat in chat_history if chat['message']]
-    app.logger.debug(history_messages)
+    # history_messages = [chat['message'] for chat in chat_history if chat['message']]
+    # app.logger.debug(history_messages)
 
     # 生成流式回复
-    return Response(chat_stream(message, history_messages, character_id, ), mimetype='text/plain')
+    return Response(chat_stream(message, chat_history, character_id, ), mimetype='text/plain')
 
 
 def chat_stream(input, history, character_id):
@@ -370,14 +370,25 @@ def generate_role_match_stream():
             app.logger.debug(next_question)
         else:
             combined_answers = " ".join(answers)
-            prompt = f"回答在合适的地方带有emoji表情😀，让你的回答更生动有趣！我是一名星露谷玩家，但我在纠结选择星露谷的哪名角色进行攻略，根据以下回答，判断我最适合的角色：\n\n回答：{combined_answers}\n\n角色定义：{roles}\n\n请结合角色定义，给出我最适合的角色、百分比并解释理由（重点介绍），并且再给出三个适合的角色以及匹配的百分比（简单介绍）,注意！重点关注性取向:{user_chose}，如果我的回答的意思与男生相近，必须从男生角色中匹配，如果我的回答的意思与女生相近，必须从女生角色中匹配."
+            prompt=f"""
+            Role: 星露谷角色匹配专家 : 专注于根据玩家的个性和喜好，匹配最适合的星露谷游戏角色。
+Goals: 根据玩家的回答和角色定义，判断最适合的角色，并提供匹配的百分比和解释理由。同时，给出三个其他适合的角色及其匹配百分比。
+Constrains: 必须使用emoji来增加回答的趣味性。重点关注玩家的性取向，确保匹配的角色符合玩家的喜好。
+Skills: 精通星露谷游戏角色特性，擅长个性分析和喜好匹配，善于使用emoji增强交流趣味。
+Output Format: 首先输出最适合角色的名称、匹配百分比和详细解释理由。然后，依次列出三个其他适合角色的名称、匹配百分比和简单介绍。
+Workflow: 1. 分析玩家的回答和角色定义。2. 必须严格依照玩家的性取向，从相应的角色中选择最匹配的角色。3. 计算匹配百分比，并给出解释理由。4. 选择三个其他适合的角色，并计算匹配百分比。5. 使用emoji来增加回答的趣味性。
+Initialization: 你好！👋 我是一名星露谷角色匹配专家。🌟 根据你的回答和角色定义，我会帮你找到最适合的角色，并给出匹配的百分比和解释理由。🔍 同时，我还会提供三个其他适合的角色。🎯 让我们开始吧！🚀
+Player Query and answer: {combined_answers}
+Roles: {roles}
+Player Sexual Orientation: {user_chose}
+           """
+            # prompt = f"我希望你在回答里多用emoji！！！！！！我是一名星露谷玩家，但我在纠结选择星露谷的哪名角色进行攻略，根据以下的问题和回答，判断我最适合的角色：\n\n{combined_answers}\n\n角色定义：{roles}\n\n请结合角色定义，给出我最适合的角色、百分比并解释理由（重点介绍），并且再给出三个适合的角色以及匹配的百分比（简单介绍）,注意！重点关注性取向:{user_chose}，如果我的回答的意思与男生相近，必须从男生角色中匹配，如果我的回答的意思与女生相近，必须从女生角色中匹配."
             app.logger.debug(prompt)
             for chunk in zhipuai_chat_model.stream(input=prompt):
                 delta_content = chunk.content
                 if delta_content:
                     yield f"{delta_content}".encode('utf-8')
             yield b"__COMPLETE__"  # 发送特殊标志，表示测试已完成
-
 
 @app.route('/role_match_send_message', methods=['POST'])
 @jwt_required()
@@ -394,10 +405,10 @@ def role_match_send_message():
     if message is not None:
         app.logger.debug(len(answers))
         if len(answers) < len(questions)+1:
-            if(len(answers)==1):
-                answers.append(message)
+            if(len(answers)==0):
+                answers.append("性取向："+message+'\n')
             else:
-                answers.append(questions[len(answers)-2]+message)
+                answers.append(questions[len(answers)-1]+message+'\n')
             return Response(generate_role_match_stream(), content_type='text/event-stream')
         else:
             answers = []

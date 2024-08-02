@@ -91,16 +91,16 @@
             <div v-if="currentSessionId">
               <p v-for="msg in chatMessages" :key="msg.id" style="padding: 1px 2%;"
                 :class="{ 'user-message': msg.isUser, 'assistant-message': !msg.isUser }">
-                <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
+                <img v-if="msg.sender === 'user'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" :src="getIconForCurrentCard()" alt="Assistant Avatar">
-                <span v-if="msg.sender !== 'User' && msg.message === ''" class="loading-dots">
+                <span v-if="msg.sender !== 'user' && msg.message === ''" class="loading-dots">
                   <span class="dot"></span>
                   <span class="dot"></span>
                   <span class="dot"></span>
                 </span>
                 <MarkdownRenderer :markdown="msg.message" />
-                <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon"
+                <img v-if="msg.sender !== 'user'" src="../assets/assistant/copy.png" class="copy-icon"
                   @click="copyToClipboard(msg.message)" alt="Copy Icon">
               </p>
             </div>
@@ -252,8 +252,8 @@ export default {
           return Leah_Icon;
         case 'Sam':
           return Sam_Icon;
-        case 'Sebastia':
-          return Sebastia_Icon;
+        case 'Sebastian':
+          return Sebastian_Icon;
         case 'Shane':
           return Shane_Icon;
         case 'Penny':
@@ -325,7 +325,7 @@ export default {
 
       this.chatMessages.push({
         id: Date.now(),
-        sender: 'User',
+        sender: 'user',
         message: messageToSend
       });
 
@@ -337,7 +337,7 @@ export default {
       const aiMessageId = Date.now() + 1;
       this.chatMessages.push({
         id: aiMessageId,
-        sender: 'AI',
+        sender: 'ai',
         message: ''
       });
 
@@ -359,6 +359,7 @@ export default {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+      this.userInput = '';
       // 隐藏等待动画
       //document.getElementById('loading').style.display = 'none';
 

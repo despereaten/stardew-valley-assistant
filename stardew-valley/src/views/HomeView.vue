@@ -17,6 +17,13 @@
 </template>
 
 <style scoped>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 .background {
 position: absolute;
 top: 0;
@@ -38,7 +45,7 @@ background-size: cover;
 
 .floating {
   position: absolute;
-  max-width: 100%;
+  max-width: 90%;
   height: auto;
   animation: shake 4s infinite;
 }
@@ -53,7 +60,7 @@ background-size: cover;
 .green-butterfly,
 .purple-butterfly{
   position: absolute;
-  max-width: 100%;
+  max-width: 90%;
   height: auto;
 }
 .start-button {

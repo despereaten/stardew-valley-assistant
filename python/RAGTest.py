@@ -46,27 +46,27 @@ zhipuai_chat_model = ChatZhipuAI(
 # 完成模型的选用,封装为chat_model
 chat_model = zhipuai_chat_model
 
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
-os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
+# os.environ["LANGCHAIN_TRACING_V2"] = "true"
+# os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+# os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
+# os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
 
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
-                                   model_kwargs={'device': EMBEDDING_DEVICE})
+# embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+#                                    model_kwargs={'device': EMBEDDING_DEVICE})
 # embeddings = HuggingFaceEmbeddings(model_name= "models\m3e-base",
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
-# embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
-#                                    model_kwargs={'device': EMBEDDING_DEVICE})
+embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
+                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-# vector = FAISS.load_local("./faiss_index",
-#                           embeddings, allow_dangerous_deserialization=True)
-vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
+vector = FAISS.load_local("./faiss_index",
                           embeddings, allow_dangerous_deserialization=True)
+# vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
+#                           embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
 retriever = vector.as_retriever()

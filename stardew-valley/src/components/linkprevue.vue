@@ -40,6 +40,8 @@ import Desert_Festival from "../assets/guesslike/600px-Desert_Festival.png";
 import Flower_Festival from "../assets/guesslike/600px-Flower_Festival.png";
 import Warp_Totem_Beach from "../assets/guesslike/600px-Warp_Totem_Beach_location.png";
 import SecretWoods from "../assets/guesslike/SecretWoods.png";
+import Finished_Pantry from "../assets/guesslike/Finished_Pantry.png";
+
 
 export default {
   name: "link-prevue",
@@ -94,6 +96,7 @@ export default {
         Flower_Festival,
         Warp_Totem_Beach,
         SecretWoods,
+        Finished_Pantry,
       ],
     };
   },

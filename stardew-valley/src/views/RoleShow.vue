@@ -94,11 +94,6 @@
                 <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" :src="getIconForCurrentCard()" alt="Assistant Avatar">
-                <span v-if="msg.sender !== 'User' && msg.message === ''" class="loading-dots">
-                  <span class="dot"></span>
-                  <span class="dot"></span>
-                  <span class="dot"></span>
-                </span>
                 <MarkdownRenderer :markdown="msg.message" />
                 <img v-if="msg.sender !== 'User'" src="../assets/assistant/copy.png" class="copy-icon"
                   @click="copyToClipboard(msg.message)" alt="Copy Icon">
@@ -107,7 +102,7 @@
           </div>
 
           <div class="input-box">
-            <textarea v-model="userInput" placeholder="请输入你的疑问..." @keydown.enter="sendChatMessage"></textarea>
+            <textarea v-model="userInput" placeholder="请输入你的疑问..." @keydown.enter="sendMessage"></textarea>
             <button v-if="!isStreaming" @click="sendChatMessage">发送</button>
             <button v-else @click="stopStreaming">暂停</button>
           </div>
@@ -214,7 +209,6 @@ export default {
       userInput: '',
       isStreaming: false,
       textSegments: [],
-      character_id: ''
     };
   },
   methods: {
@@ -235,7 +229,7 @@ export default {
       }
     },
     getIconForCurrentCard() {
-      switch (this.character_id) {
+      switch (this.currentCard.name) {
         case 'Alex':
           return Alex_Icon;
         case 'Abigail':
@@ -268,9 +262,6 @@ export default {
     //wyx:创建新对话
     startChatting() {
       this.isChatting = true;
-      this.character_id = this.currentCard.name;
-      localStorage.setItem('character_id', this.character_id);
-      console.log('this.character_id:' + this.character_id)
       localStorage.setItem('isChatting', 'true');
 
       axios
@@ -341,8 +332,6 @@ export default {
         message: ''
       });
 
-      this.isWaitingForResponse = true;
-
       this.$nextTick(() => {
         this.scrollToBottom();
       });
@@ -384,13 +373,12 @@ export default {
           this.scrollToBottom();
         });
       }
-      this.isWaitingForResponse = false;
+
       this.isStreaming = false;
       // 在消息完全接收后或流式输出停止后保存答案
       if (!this.isStopped) {
         this.saveAnswer(this.response);
         console.log("保存答案")
-        this.isWaitingForResponse = false;
       }
     },
 
@@ -468,7 +456,6 @@ export default {
     }
     // 获取当前会话ID
     this.currentSessionId = localStorage.getItem('currentSessionId');
-    this.character_id = localStorage.getItem('character_id') || '';
 
     // 如果有当前会话ID，则加载历史记录
     if (this.currentSessionId) {
@@ -479,50 +466,11 @@ export default {
 </script>
 
 
+<style scoped>
+/* Add your styles here */
+</style>
+
 <style scoped lang="scss">
-//呼吸灯效果
-.loading-dots {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  padding-left: 5px;
-  /* 调整与头像的距离 */
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  margin: 0 2px;
-  background-color: #333;
-  border-radius: 50%;
-  animation: blink 1.4s infinite both;
-}
-
-.dot:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes blink {
-
-  0%,
-  80%,
-  100% {
-    opacity: 0;
-  }
-
-  40% {
-    opacity: 1;
-  }
-}
-
 .user-profile-container {
   width: 25%;
   cursor: pointer;

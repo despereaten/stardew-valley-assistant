@@ -1,4 +1,3 @@
-      
 <template>
   <nav>
     <ul>
@@ -58,7 +57,7 @@
               <!-- <img src="../assets/guesslike/link.png" class="link-icon" /><a :href="link" target="_blank">{{ link }}</a>
               <img src="../assets/assistant/Haley_Icon.png" class="card-image" /> -->
               <!-- 在这里使用 LinkPrevue 组件 -->
-              <LinkPrevue :url="link" />
+              <linkprevue :url="link" />
             </div>
           </div>
         </div>
@@ -72,14 +71,14 @@ import axios from 'axios';
 import snow from '../components/snow.vue';
 import flower from '../components/flower.vue';
 import star from '../components/star.vue';
-import LinkPrevue from 'link-prevue';
+import linkprevue from '../components/linkprevue.vue';
 
 export default {
 components: {
   snow,
   flower,
   star,
-  LinkPrevue,
+  linkprevue
 },
 data() {
   return {
@@ -88,7 +87,7 @@ data() {
     username: localStorage.getItem('username'),
     currentBackground: 'background-winter',
     currentComponent: 'snow',
-    loading: false, //new loading animation
+    loading: false, 
   };
 },
 methods: {
@@ -419,10 +418,12 @@ background-color: rgb(145, 198, 244);
 }
 
 .card-container {
-display: flex;
-flex-direction: column;
-gap: 15px;
-position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: space-between;
+  position: relative;
+
 }
 
 .card {
@@ -431,12 +432,16 @@ position: relative;
   border-radius: 4px;
   padding: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  width: 48%;
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 15px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .link-section {
@@ -450,6 +455,7 @@ position: relative;
   margin-right: 5px;
   vertical-align: middle;
 }
+
 
 .card a {
   text-decoration: none;
@@ -470,5 +476,3 @@ position: relative;
   margin-left: 10px;
 }
 </style>
-
-    

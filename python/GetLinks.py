@@ -29,7 +29,8 @@ from Crawler import get_link_list
 
 
 # 设置环境变量
-os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
+# os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
+os.environ["ZHIPUAI_API_KEY"] = "d637342fa757ce4184fb81ec813e461b.rZ53MvqlIlqwUc9X"
 os.environ[
     "USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
 os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1695519feadabec772"

@@ -51,7 +51,7 @@
             <ul class="session-list">
               <li v-for="session in sessions" :key="session.session_id" class="session-item">
                 <button @click="selectSession(session.session_id)" class="session-button" :title="session.summary"
-                  v-if="session.summary != null">
+                  :class="{ 'selected': session.session_id === selectedSessionId }" v-if="session.summary != null">
                   {{ session.summary }}
                 </button>
                 <button @click="deleteSession(session.session_id)" class="delete-button"
@@ -134,6 +134,7 @@ export default {
       controller: new AbortController(),
       response: '',
       isStreaming: false,
+      selectedSessionId: null, // 新增的属性
     };
   },
   created() {
@@ -196,6 +197,7 @@ export default {
     },
     selectSession(sessionId) {
       this.currentSessionId = sessionId;
+      this.selectedSessionId = sessionId; // 设置选中的sessionId
       this.loadHistory(sessionId);
       console.log("select dialog:", sessionId);
     },
@@ -675,7 +677,6 @@ loading-container {
   background-color: rgba(255, 255, 255, 0.833);
   color: #ba4d0d;
   border-bottom-style: 2px solid #ba4d0d;
-  ;
   border-radius: 4px;
   cursor: pointer;
   overflow: hidden;
@@ -683,10 +684,23 @@ loading-container {
   text-overflow: ellipsis;
   max-width: 80%;
   /* 固定按钮最大宽度 */
+  transition: background-color 0.5s ease; //过渡效果
 }
 
 .session-button:hover {
   background-color: rgba(254, 236, 216, 0.833);
+}
+@keyframes background-fade {
+  from {
+    background-color: rgba(254, 236, 216, 0.833);
+  }
+  to {
+    background-color: rgba(230, 178, 120, 0.833);
+  }
+}
+
+.session-button.selected {
+  animation: background-fade 0.5s forwards; /* 应用动画 */
 }
 
 .session-button::after {

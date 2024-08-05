@@ -24,6 +24,8 @@ import re
 
 
 # zhipu
+# os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
+
 os.environ["ZHIPUAI_API_KEY"] = "92cc12aafa0a5c5e800079ffb16bc445.QrNIW2JoQjvTCSFz"
 # WebBaseLoader --BeautifulSoup4
 os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
@@ -44,27 +46,27 @@ zhipuai_chat_model = ChatZhipuAI(
 # 完成模型的选用,封装为chat_model
 chat_model = zhipuai_chat_model
 
-# os.environ["LANGCHAIN_TRACING_V2"] = "true"
-# os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-# os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
-# os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
+os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
 
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 EMBEDDING_DEVICE = "cpu"
-# embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
-#                                    model_kwargs={'device': EMBEDDING_DEVICE})
+embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+                                   model_kwargs={'device': EMBEDDING_DEVICE})
 # embeddings = HuggingFaceEmbeddings(model_name= "models\m3e-base",
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
-embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
-                                   model_kwargs={'device': EMBEDDING_DEVICE})
+# embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
+#                                    model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
-vector = FAISS.load_local("./faiss_index",
-                          embeddings, allow_dangerous_deserialization=True)
-# vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
+# vector = FAISS.load_local("./faiss_index",
 #                           embeddings, allow_dangerous_deserialization=True)
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
+                          embeddings, allow_dangerous_deserialization=True)
 
 # 将向量数据库转换为检索器
 retriever = vector.as_retriever()

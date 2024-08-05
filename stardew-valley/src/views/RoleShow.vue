@@ -171,7 +171,6 @@ export default {
   },
   data() {
     return {
-
       //wyx:
       //sessions: [],//只包含session_id和summary信息
       currentSessionId: null,

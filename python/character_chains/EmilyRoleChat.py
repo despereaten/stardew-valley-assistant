@@ -11,7 +11,7 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, \
     SystemMessagePromptTemplate, FewShotChatMessagePromptTemplate
 
-os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
+os.environ["ZHIPUAI_API_KEY"] = "92cc12aafa0a5c5e800079ffb16bc445.QrNIW2JoQjvTCSFz"
 # WebBaseLoader --BeautifulSoup4
 os.environ[
     "USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
@@ -95,7 +95,7 @@ prompt = ChatPromptTemplate.from_messages(
 
 parser = StrOutputParser()
 chain = prompt | chat_model | parser
-#
+
 # chat_history = []
 # print("try chat....")
 # while True:

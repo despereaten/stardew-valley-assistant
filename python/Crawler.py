@@ -25,8 +25,10 @@ def get_link_list(key_lists):
             print("search for key: ",key)
             results = driver.find_elements(By.CSS_SELECTOR, "h3.t>a")
             for result in results:
-                # print(result.text)
-                link_lists.append(result.get_attribute('href'))
+                link = result.get_attribute('href')
+                # 过滤掉以 'https://www.baidu.com/sf/vsearch?' 开头的链接
+                if not link.startswith("https://www.baidu.com/sf/vsearch?") and not link.startswith("https://image.baidu.com/search/index?"):
+                    link_lists.append(link)
     except Exception as e:
         print(f"An error occured:{e}")
     finally:

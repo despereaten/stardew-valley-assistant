@@ -130,6 +130,7 @@ for filename in os.listdir(base_dir):
         loader = TextLoader(file_path, encoding='utf-8')  # 指定编码
         documents.extend(loader.load())
 
+
 # 3.分词和向量化
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

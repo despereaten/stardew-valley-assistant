@@ -37,6 +37,7 @@ os.environ["LANGCHAIN_API_KEY"] = "lsv2_pt_86447201addd4585b98bd3bb288041dc_850f
 os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
 
 
+
 # zhipu
 from langchain_community.chat_models import ChatZhipuAI
 from langchain_core.callbacks.manager import CallbackManager
@@ -61,8 +62,8 @@ embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\
 # embeddings = HuggingFaceEmbeddings(model_name= "models\m3e-base",
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
 # embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
-#                                    model_kwargs={'device': EMBEDDING_DEVICE})
-
+#                                     model_kwargs={'device': EMBEDDING_DEVICE})
+print("==============加载模型==============")
 vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index_cohere",
                           embeddings, allow_dangerous_deserialization=True)
 # vector = FAISS.load_local("./faiss_index_cohere",

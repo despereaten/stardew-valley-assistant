@@ -14,9 +14,9 @@
       <div class="color-button black-button" @click="changeBackground('night')"></div>
       <div class="color-button blue-button" @click="changeBackground('winter')"></div>
       <div class="user-profile-container" @mouseover="showProfile = true" @mouseleave="hideProfile">
-        <img src="../assets/assistant/Haley_Icon.png" class="user-image" />
+        <img src="../assets/role/The_Player_Icon.png" class="user-image" />
         <div v-if="showProfile" class="profile-details">
-          <img src="../assets/assistant/Haley_Icon.png" class="profile-image" />
+          <img src="../assets/role/The_Player_Icon.png" class="profile-image" />
           <p class="user-info">用户姓名: {{ username }}</p> <button @click="logout" class="action-button">退出登录</button>
           <button @click="switchAccount" class="action-button">切换账号</button>
         </div>

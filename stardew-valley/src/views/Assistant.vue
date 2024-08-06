@@ -68,7 +68,7 @@
                 <img v-if="msg.sender === 'User'" class="avatar" src="../assets/role/The_Player_Icon.png"
                   alt="User Avatar">
                 <img v-else class="avatar" src="../assets/assistant/White_Chicken.png" alt="Assistant Avatar">
-                <span v-if="msg.sender !== 'User' && msg.message === ''" class="loading-dots">
+                <span v-if="msg.sender !== 'User' && msg.message === ''&& msg.isStreaming" class="loading-dots">
                   <span class="dot"></span>
                   <span class="dot"></span>
                   <span class="dot"></span>
@@ -237,6 +237,11 @@ export default {
       this.isStreaming = false;
       this.controller.abort();
       this.saveAnswer(this.response);
+       // 找到正在流式传输的消息并停止其流式状态
+  const aiMessageIndex = this.chatMessages.findIndex(msg => msg.isStreaming);
+  if (aiMessageIndex !== -1) {
+    this.chatMessages[aiMessageIndex].isStreaming = false;
+  }
     },
     // async sendMessage() {
     //   if (this.userInput.trim() === '') return;
@@ -348,7 +353,7 @@ export default {
       this.chatMessages.push({
         id: aiMessageId,
         sender: 'AI',
-        message: ''
+        message: '',isStreaming: true
       });
 
       this.$nextTick(() => {

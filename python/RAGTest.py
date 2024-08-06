@@ -21,36 +21,36 @@
 import os
 import re
 
-
-
 # zhipu
-# os.environ["ZHIPUAI_API_KEY"] = "183575f15e77347d72c40941d6773405.N4btmxwTujCvK9IW"
-
 os.environ["ZHIPUAI_API_KEY"] = "92cc12aafa0a5c5e800079ffb16bc445.QrNIW2JoQjvTCSFz"
 # WebBaseLoader --BeautifulSoup4
 os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
 os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1695519feadabec772"
 
-# zhipu
-from langchain_community.chat_models import ChatZhipuAI
-from langchain_core.callbacks.manager import CallbackManager
-from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+# Cohere
+os.environ["COHERE_API_KEY"] = "zXiZIOuAtK8envjHFvrN6nIKCAB2ULmBkPL2IrL7"
 
-zhipuai_chat_model = ChatZhipuAI(
-    model="glm-4",
-    temperature = 0.5,
-    streaming = True,
-    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
-)
-
-# 完成模型的选用,封装为chat_model
-chat_model = zhipuai_chat_model
-
+# langsmith
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
 os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
 
+
+# zhipu
+from langchain_community.chat_models import ChatZhipuAI
+from langchain_core.callbacks.manager import CallbackManager
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain_cohere import CohereRerank
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# 模型的封装
+llm = ChatZhipuAI(
+    model="glm-4",
+    temperature=0.5,
+    streaming = True,
+    callbacks=[StreamingStdOutCallbackHandler()],
+)
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -62,14 +62,24 @@ embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
 # embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
-print("==============加载模型==============")
-# vector = FAISS.load_local("./faiss_index",
-#                           embeddings, allow_dangerous_deserialization=True)
-vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index",
-                          embeddings, allow_dangerous_deserialization=True)
 
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index_cohere",
+                          embeddings, allow_dangerous_deserialization=True)
+# vector = FAISS.load_local("./faiss_index_cohere",
+#                           embeddings, allow_dangerous_deserialization=True)
+print("=============== 加载向量 =================")
 # 将向量数据库转换为检索器
-retriever = vector.as_retriever()
+
+retriever = vector.as_retriever(
+    search_kwargs={"k": 5}
+)
+print("==============检索器包装^==============")
+
+# 引入了基于语言模型的重排序，从而提高了检索结果的质量和相关性
+compressor = CohereRerank(model="rerank-multilingual-v3.0")
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor = compressor,base_retriever = retriever
+)
 
 from langchain.chains import create_history_aware_retriever
 from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
@@ -83,7 +93,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # 用于生成搜索查询并从外部检索信息
-retriever_chain = create_history_aware_retriever(chat_model, retriever, prompt)
+retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
 # 用于生成最终回答，以便基于检索到的文档内容和对话历史回答用户问题，content为搜索到的文档内容
 prompt = ChatPromptTemplate.from_messages([
@@ -95,7 +105,7 @@ prompt = ChatPromptTemplate.from_messages([
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 # 基于检索到的文档内容生成回答
-document_chain = create_stuff_documents_chain(chat_model, prompt)
+document_chain = create_stuff_documents_chain(llm, prompt)
 
 from langchain.chains.retrieval import create_retrieval_chain
 
@@ -165,16 +175,11 @@ def get_links(human_message):
 
 def RAG_stream(input,chat_history):
     for chunk in retrieval_chain.stream({"chat_history": chat_history, "input": input}):
-        # delta_content = chunk.choices[0].delta.input
         delta_content = chunk.get("answer")
         if delta_content:
             yield f"{delta_content}".encode('utf-8')
 
 
-#
-# if __name__ == "__main__":
-#     user_input = input("请输入要概括的内容：")
-#     summarize_dialog(user_input)
 if __name__ == "__main__":
     user_input = input("Enter")
     print(get_links(user_input))

@@ -6,13 +6,13 @@ import Assistant from '../views/Assistant.vue';
 import GuessLike from '../views/GuessLike.vue';
 import RoleShow from "../views/RoleShow.vue";
 import RoleMatching from "../views/RoleMatching.vue";
-
+import test from "../views/test.vue"
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
   },
   {
     path: '/login',

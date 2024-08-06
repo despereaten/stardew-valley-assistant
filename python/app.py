@@ -216,13 +216,13 @@ def delete_session(session_id):
 
 
 # 流式返回生成的内容
-@app.route('/stream', methods=['POST'])
-def stream_output():
-    data = request.get_json()
-    message = data.get('message')
-    if data:
-        return Response(RAG_stream(message, []), mimetype='text/plain')
-    return "没有内容"
+# @app.route('/stream', methods=['POST'])
+# def stream_output():
+#     data = request.get_json()
+#     message = data.get('message')
+#     if data:
+#         return Response(RAG_stream(message, []), mimetype='text/plain')
+#     return "没有内容"
 
 
 # zy：

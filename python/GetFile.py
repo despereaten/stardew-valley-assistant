@@ -155,11 +155,4 @@ vector = FAISS.from_documents(documents=split_documents, embedding=embeddings)
 print("==============词向量^==============")
 
 # 保存FAISS索引到磁盘
-vector.save_local("faiss_index")
-
-# 4: 加载FAISS索引和检索数据
-from langchain_community.vectorstores import FAISS
-
-# 从磁盘加载FAISS索引
-vector = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-retriever = vector.as_retriever()
+vector.save_local("faiss_index_cohere")

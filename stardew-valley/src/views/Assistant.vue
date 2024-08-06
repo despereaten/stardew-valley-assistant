@@ -238,6 +238,90 @@ export default {
       this.controller.abort();
       this.saveAnswer(this.response);
     },
+    // async sendMessage() {
+    //   if (this.userInput.trim() === '') return;
+    //   const messageToSend = this.userInput;
+    //   console.log("messageToSend", messageToSend);
+    //   this.controller = new AbortController();
+    //   this.response = '';
+    //   this.isStopped = false;
+    //   this.isStreaming = true;
+
+    //   this.userInput = '';
+
+    //   this.chatMessages.push({
+    //     id: Date.now(),
+    //     sender: 'User',
+    //     message: messageToSend
+    //   });
+
+    //   this.$nextTick(() => {
+    //     this.scrollToBottom();
+    //   });
+
+    //   // 初始化 AI 消息
+    //   const aiMessageId = Date.now() + 1;
+    //   this.chatMessages.push({
+    //     id: aiMessageId,
+    //     sender: 'AI',
+    //     message: ''
+    //   });
+
+    //   this.$nextTick(() => {
+    //     this.scrollToBottom();
+    //   });
+
+    //   const response = await fetch('http://localhost:5000/send_message', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //       'Authorization': `Bearer ${localStorage.getItem('token')}`  // 添加token
+    //     },
+    //     body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
+    //     signal: this.controller.signal
+    //   });
+
+    //   const reader = response.body.getReader();
+    //   const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
+    //   while (true) {
+    //     if (this.isStopped) break;
+    //     const { done, value } = await reader.read();
+    //     if (done) break;
+    //     this.response += new TextDecoder().decode(value);
+
+    //     // 更新 AI 消息内容
+    //     if (aiMessageIndex !== -1) {
+    //       this.chatMessages[aiMessageIndex].message = this.response;
+    //     }
+    //     this.$nextTick(() => {
+    //       this.scrollToBottom();
+    //     });
+    //   }
+
+    //   this.isStreaming = false;
+    //   // 在消息完全接收后或流式输出停止后保存答案
+    //   if (!this.isStopped) {
+    //     this.saveAnswer(this.response);
+    //   }
+
+    //   const sessionIndex = this.sessions.findIndex(session => session.session_id === this.currentSessionId);
+    //   //更新session summary
+    //   if (sessionIndex != -1 && this.sessions[sessionIndex].summary === '新会话') {
+    //     axios
+    //       .get(`http://localhost:5000/update_summary/${this.currentSessionId}`)
+    //       .then(response => {
+    //         const updatedSummary = response.data.summary;
+    //         this.sessions[sessionIndex].summary = updatedSummary;
+    //         console.log("update summary:", this.currentSessionId, updatedSummary);
+    //       })
+    //       .catch(error => {
+    //         console.error('Error loading history:', error);
+    //         this.isStreaming = false;
+    //       });
+    //     this.loadSessions();
+    //   }
+    // }
+    // ,
     async sendMessage() {
       if (this.userInput.trim() === '') return;
       const messageToSend = this.userInput;
@@ -271,57 +355,64 @@ export default {
         this.scrollToBottom();
       });
 
-      const response = await fetch('http://localhost:5000/send_message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`  // 添加token
-        },
-        body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),//发送到服务器的数据
-        signal: this.controller.signal
-      });
-
-      const reader = response.body.getReader();
-      const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
-      while (true) {
-        if (this.isStopped) break;
-        const { done, value } = await reader.read();
-        if (done) break;
-        this.response += new TextDecoder().decode(value);
-
-        // 更新 AI 消息内容
-        if (aiMessageIndex !== -1) {
-          this.chatMessages[aiMessageIndex].message = this.response;
-        }
-        this.$nextTick(() => {
-          this.scrollToBottom();
+      try {
+        const response = await fetch('http://localhost:5000/send_message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`  // 添加token
+          },
+          body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),
+          signal: this.controller.signal
         });
-      }
 
-      this.isStreaming = false;
-      // 在消息完全接收后或流式输出停止后保存答案
-      if (!this.isStopped) {
-        this.saveAnswer(this.response);
-      }
+        const reader = response.body.getReader();
+        const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
+        const decoder = new TextDecoder();
 
-      const sessionIndex = this.sessions.findIndex(session => session.session_id === this.currentSessionId);
-      //更新session summary
-      if (sessionIndex != -1 && this.sessions[sessionIndex].summary === '新会话') {
-        axios
-          .get(`http://localhost:5000/update_summary/${this.currentSessionId}`)
-          .then(response => {
-            const updatedSummary = response.data.summary;
-            this.sessions[sessionIndex].summary = updatedSummary;
-            console.log("update summary:", this.currentSessionId, updatedSummary);
-          })
-          .catch(error => {
-            console.error('Error loading history:', error);
-            this.isStreaming = false;
+        while (true) {
+          if (this.isStopped) break;
+          const { done, value } = await reader.read();
+          if (done) break;
+          this.response += decoder.decode(value, { stream: true });
+
+          // 更新 AI 消息内容
+          if (aiMessageIndex !== -1) {
+            this.chatMessages[aiMessageIndex].message = this.response;
+          }
+          this.$nextTick(() => {
+            this.scrollToBottom();
           });
-        this.loadSessions();
+        }
+
+        this.isStreaming = false;
+        // 在消息完全接收后或流式输出停止后保存答案
+        if (!this.isStopped) {
+          this.saveAnswer(this.response);
+        }
+
+        const sessionIndex = this.sessions.findIndex(session => session.session_id === this.currentSessionId);
+        //更新session summary
+        if (sessionIndex !== -1 && this.sessions[sessionIndex].summary === '新会话') {
+          axios
+            .get(`http://localhost:5000/update_summary/${this.currentSessionId}`)
+            .then(response => {
+              const updatedSummary = response.data.summary;
+              this.sessions[sessionIndex].summary = updatedSummary;
+              console.log("update summary:", this.currentSessionId, updatedSummary);
+            })
+            .catch(error => {
+              console.error('Error loading history:', error);
+              this.isStreaming = false;
+            });
+          this.loadSessions();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        this.isStreaming = false;
       }
-    }
-    ,
+    },
+
     async saveAnswer(answer) {
       try {
         await axios.post('http://localhost:5000/save_answer', {
@@ -909,5 +1000,4 @@ button:hover {
   color: #8a390a;
   font-weight: bold;
   text-shadow: 2px 2px 2px #5c190b3d;
-}
-</style>
+}</style>

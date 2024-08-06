@@ -69,7 +69,7 @@ export default {
 
 <style scoped>
 .clickable-area {
-  width: 99vw;
+  width: 98vw;
   height: 50vh;
   position: relative;
   overflow: hidden;

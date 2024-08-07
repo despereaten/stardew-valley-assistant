@@ -78,8 +78,29 @@
                   @click="copyToClipboard(msg.message)" alt="Copy Icon">
               </p>
             </div>
-          </div>
 
+             <!-- 预设词模块的条件渲染 -->
+    <div v-if="this.currentSessionId === null" class="preset-container">
+      <img v-if="presets.length > 0" src="../assets/assistant/White_Chicken.png" alt="Assistant Icon" class="preset-image">
+      <div class="preset-buttons">
+        
+        <div v-for="(preset, index) in presets" :key="index" class="preset">
+          <button v-if="!preset.loading" @click="selectPreset(preset.text)">
+            <img src="../assets/assistant/Magnifying_Glass.png" alt="Magnifying Glass">
+            {{ preset.text }}
+          </button>
+          <span v-else class="loading-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+          
           <div class="input-box">
             <textarea v-model="userInput" placeholder="请输入你的疑问..." @keyup.enter="sendMessage"></textarea>
             <button v-if="!isStreaming" @click="sendMessage">发送</button>
@@ -91,7 +112,6 @@
     </div>
   </div>
 </template>
-
 
 <script>
 import axios from 'axios';
@@ -135,11 +155,19 @@ export default {
       response: '',
       isStreaming: false,
       selectedSessionId: null, // 新增的属性
+      presets: [
+        { text: '', loading: true }
+      ],
     };
   },
   created() {
     this.loadSessions();
     this.checkAuth();
+  },
+  mounted() {
+    if (this.currentSessionId === null) {
+      this.fetchPresets();
+    }
   },
   methods: {
     goto(route) {
@@ -182,11 +210,43 @@ export default {
           console.error('Error loading sessions:', error);
         });
     },
+    fetchPresets() {
+      axios
+        .get(`http://localhost:5000/generate_presets`)
+        .then(response => {
+          const presets = response.data.presets;
+          this.presets = presets.map(preset => ({ text: preset, loading: false }));
+        })
+        .catch(error => {
+          console.error('Failed to fetch presets:', error);
+        });
+    },
+    async selectPreset(presetText) {
+      this.userInput = presetText;
+      console.log("userInput from presetText", presetText);
+      try {
+        const response = await axios.post('http://localhost:5000/preset_start_new_session', {
+          question: presetText,
+        });
+        const session = response.data;
+        this.sessions.push(session);
+        await this.selectSession(session.session_id);
+        console.log("add dialog:", session.session_id);
+
+        // 等待 session 被正确选择后，再发送消息
+        // await this.sendMessage();
+        this.sendMessage();
+      } catch (error) {
+        console.error('Fail to select presets:', error);
+      }
+
+    },
     startNewSession() {
       axios
         .post('http://localhost:5000/new_session')
         .then(response => {
           const session = response.data;
+          console.log(response.data);
           this.sessions.push(session);
           this.selectSession(session.session_id);
           console.log("add dialog:", session.session_id);
@@ -196,22 +256,33 @@ export default {
         });
     },
     selectSession(sessionId) {
-      this.currentSessionId = sessionId;
-      this.selectedSessionId = sessionId; // 设置选中的sessionId
-      this.loadHistory(sessionId);
-      console.log("select dialog:", sessionId);
-    },
-    loadHistory(sessionId) {
-      axios
-        .get(`http://localhost:5000/get_history/${sessionId}`)
-        .then(response => {
-          this.chatMessages = response.data.history;
-          console.log("load dialog:", sessionId);
-        })
-        .catch(error => {
-          console.error('Error loading history:', error);
-        });
-    },
+  this.currentSessionId = sessionId;
+  this.selectedSessionId = sessionId; // 设置选中的sessionId
+  return new Promise((resolve, reject) => {
+    this.loadHistory(sessionId)
+      .then(() => {
+        console.log("select dialog:", sessionId);
+        resolve();
+      })
+      .catch(error => {
+        console.error('Error loading history:', error);
+        reject(error);
+      });
+  });
+},
+
+loadHistory(sessionId) {
+  return axios
+    .get(`http://localhost:5000/get_history/${sessionId}`)
+    .then(response => {
+      this.chatMessages = response.data.history;
+      console.log("load dialog:", sessionId);
+    })
+    .catch(error => {
+      console.error('Error loading history:', error);
+      throw error;
+    });
+},
     deleteSession(sessionId) {  // 添加删除会话的方法
       axios
         .delete(`http://localhost:5000/delete_session/${sessionId}`)
@@ -237,11 +308,11 @@ export default {
       this.isStreaming = false;
       this.controller.abort();
       this.saveAnswer(this.response);
-       // 找到正在流式传输的消息并停止其流式状态
-  const aiMessageIndex = this.chatMessages.findIndex(msg => msg.isStreaming);
-  if (aiMessageIndex !== -1) {
-    this.chatMessages[aiMessageIndex].isStreaming = false;
-  }
+      // 找到正在流式传输的消息并停止其流式状态
+      const aiMessageIndex = this.chatMessages.findIndex(msg => msg.isStreaming);
+      if (aiMessageIndex !== -1) {
+        this.chatMessages[aiMessageIndex].isStreaming = false;
+      }
     },
     // async sendMessage() {
     //   if (this.userInput.trim() === '') return;
@@ -353,7 +424,7 @@ export default {
       this.chatMessages.push({
         id: aiMessageId,
         sender: 'AI',
-        message: '',isStreaming: true
+        message: '', isStreaming: true
       });
 
       this.$nextTick(() => {
@@ -361,6 +432,7 @@ export default {
       });
 
       try {
+
         const response = await fetch('http://localhost:5000/send_message', {
           method: 'POST',
           headers: {
@@ -370,7 +442,6 @@ export default {
           body: JSON.stringify({ session_id: this.currentSessionId, message: messageToSend }),
           signal: this.controller.signal
         });
-
         const reader = response.body.getReader();
         const aiMessageIndex = this.chatMessages.findIndex(msg => msg.id === aiMessageId);
         const decoder = new TextDecoder();
@@ -380,8 +451,8 @@ export default {
           const { done, value } = await reader.read();
           if (done) break;
           this.response += decoder.decode(value, { stream: true });
-
           // 更新 AI 消息内容
+          console.log("id", aiMessageIndex)
           if (aiMessageIndex !== -1) {
             this.chatMessages[aiMessageIndex].message = this.response;
           }
@@ -439,7 +510,8 @@ export default {
         this.currentBackground = 'background-winter';
         this.currentComponent = 'snow';
       }
-    }, copyToClipboard(text) {
+    },
+    copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
         alert('复制成功');
       }).catch(err => {
@@ -754,6 +826,7 @@ loading-container {
   list-style-type: none;
   padding: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-color: #8a390a rgba(255, 255, 255, 0.9);
   height: 70%;
   width: 88%;
@@ -1005,4 +1078,64 @@ button:hover {
   color: #8a390a;
   font-weight: bold;
   text-shadow: 2px 2px 2px #5c190b3d;
-}</style>
+}
+
+.preset-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+  margin: 0 20px;
+}
+
+.preset-image {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.preset {
+  flex: 1 1 20%; 
+  display: flex;
+  justify-content: center;
+  padding: 10px; /* 添加一些内边距以保持间距 */
+}
+
+.preset button {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid brown;
+  border-radius: 5px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+  background-color: white;
+  color: brown;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  margin: 0 0px;
+  padding: 10px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center;
+}
+
+.preset button:hover {
+  background-color: #f5f5f5;
+}
+
+.preset button:active {
+  background-color: #e0e0e0;
+}
+
+.preset button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+</style>

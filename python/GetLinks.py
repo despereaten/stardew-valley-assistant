@@ -90,7 +90,6 @@ prompt = PromptTemplate(
     template=template
 )
 
-
 # 传入历史记录
 def get_keywords(message_list):
     keywords = []
@@ -131,7 +130,6 @@ def count_word_frequencies(word_list, message_list):
     top_words = [word for word, freq in sorted_word_freq[:5]]
     print("top words:",top_words)
     return top_words
-
 
 
 def generate_search_keys(keywords):

@@ -6,10 +6,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from RAGTest import summarize_dialog, RAG_stream
 from GetLinks import get_link
+from GetPresets import get_presets
 import uuid
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
+
 # 初始化实例以便进行数据库操作
 db = SQLAlchemy(app)
 CORS(app)
@@ -50,7 +52,6 @@ class ChatHistory(db.Model):
     # 通过session_id字段与Session模型建立外键关系。
     session = db.relationship('Session', backref=db.backref('chats', lazy=True))
 
-
 # zy:推荐链接
 class Recommendation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,7 +59,6 @@ class Recommendation(db.Model):
     # title = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('recommendations', lazy=True))
-
 
 # 用户注册
 @app.route('/register', methods=['POST'])
@@ -94,7 +94,7 @@ def login():
 
 # 创建数据库表
 with app.app_context():
-    #db.drop_all()
+    # db.drop_all()
     db.create_all()
 
 
@@ -116,6 +116,18 @@ def new_session():
 
     return jsonify({'session_id': session_id, 'summary': summary})
 
+@app.route('/preset_start_new_session', methods=['POST'])
+@jwt_required()
+def preset_start_new_session():
+    user_id = get_jwt_identity()
+    session_id = str(uuid.uuid4())
+    summary = request.json["question"]
+    new_session = Session(session_id=session_id, summary=summary, user_id=user_id)
+    db.session.add(new_session)
+    db.session.commit()
+
+    return jsonify({'session_id': session_id, 'summary': summary})
+
 
 # 客户端发送消息
 @app.route('/send_message', methods=['POST'])
@@ -128,8 +140,9 @@ def send_message():
 
     # 获取当前会话的chathistory条目
     session_entry = Session.query.filter_by(session_id=session_id, user_id=user_id).first()
-    # if not session_entry:
-    #     return jsonify({'message': 'Session not found'}), 404
+    # 检查 session_entry 是否为 None
+    if session_entry is None:
+        return jsonify({'message': 'Session not found'}), 404
 
     # 更新会话概括内容(如果当前会话的概括内容是"新对话")
     if session_entry.summary == "新会话":
@@ -190,6 +203,19 @@ def get_history(session_id):
     history = [{'message': chat.message, 'sender': chat.sender} for chat in chats]
     return jsonify({'history': history})
 
+@app.route('/generate_presets',methods=['GET'])
+@jwt_required()
+def generate_presets():
+    user_id = get_jwt_identity()
+    message_list = get_messages_by_session_and_sender(user_id, 8)
+    # 生成预设词逻辑
+    presets = get_presets(message_list)
+    if len(presets) < 4:
+        links = presets
+    else:
+        # 从所有链接中随机选择10个
+        links = random.sample(presets, 4)
+    return jsonify({'presets': presets})
 
 @app.route('/get_sessions', methods=['GET'])
 @jwt_required()
@@ -228,12 +254,11 @@ def delete_session(session_id):
 # zy：
 import random
 
-
 @app.route('/generate_links', methods=['POST'])
 @jwt_required()
 def generate_link():
     user_id = get_jwt_identity()
-    keytext = get_messages_by_session_and_sender(user_id)
+    keytext = get_messages_by_session_and_sender(user_id,5)
     links = get_link(keytext)
 
     # 如果链接数量小于10,就全部返回
@@ -254,7 +279,6 @@ def generate_link():
     db.session.commit()
 
     return jsonify({'links': links})
-
 
 
 # chat相关
@@ -290,18 +314,18 @@ def get_links():
 
 
 # 获取用户最新的历史记录
-def get_messages_by_session_and_sender(user_id):
+def get_messages_by_session_and_sender(user_id,count):
     sessions = Session.query.filter_by(user_id=user_id).all()
     message_list = ['星露谷']
 
     # 如果获取到的记录超过5条，那么只根据用户最近查询的获取关键词
-    if len(sessions) > 5:
-        sessions = sessions[-5:]
+    if len(sessions) > count:
+        sessions = sessions[-count:]
     for session in sessions:
         messages = ChatHistory.query.filter_by(session_id=session.session_id, sender='User').all()
         if messages:
             message_list.extend([chat.message for chat in messages])
-    print("最新词汇列表：", messages)
+    # print("最新词汇列表：", messages)
     # 返回消息列表
     return message_list
 
@@ -337,7 +361,7 @@ def send_chat_message():
 
 
 def chat_stream(input, history, character_id):
-    #动态导入，根据名字导入对应链条
+    # 动态导入，根据名字导入对应链条
     module_name = f"character_chains.{character_id}RoleChat"
     character_module = importlib.import_module(module_name)
     # 获取模块中的 llmchain 对象
@@ -345,7 +369,7 @@ def chat_stream(input, history, character_id):
 
     for chunk in llmchain.stream({"question": input, "chat_history": history}):
         delta_content = chunk
-        #delta_content = chunk.get("output")
+        # delta_content = chunk.get("output")
         if delta_content:
             yield f"{delta_content}".encode('utf-8')
         else:
@@ -359,28 +383,28 @@ from RoleMatch import answers, roles, questions, zhipuai_chat_model
 def generate_role_match_stream():
     with app.app_context():
         app.logger.debug(len(answers))
-        if len(answers)==1:
-             global user_chose
-             user_chose=answers[0]
-             next_question = questions[len(answers)-1]
-             yield f'{next_question}'.encode('utf-8')
-        elif len(answers) < len(questions)+1:
-            next_question = questions[len(answers)-1]
+        if len(answers) == 1:
+            global user_chose
+            user_chose = answers[0]
+            next_question = questions[len(answers) - 1]
+            yield f'{next_question}'.encode('utf-8')
+        elif len(answers) < len(questions) + 1:
+            next_question = questions[len(answers) - 1]
             yield f'{next_question}'.encode('utf-8')
             app.logger.debug(next_question)
         else:
             combined_answers = " ".join(answers)
-            prompt=f"""
-            Role: 星露谷角色匹配专家 : 专注于根据玩家的个性和喜好，匹配最适合的星露谷游戏角色。
-Goals: 根据玩家的回答和角色定义，判断最适合的角色，并提供匹配的百分比和解释理由。同时，给出三个其他适合的角色及其匹配百分比。
-Constrains: 必须使用emoji来增加回答的趣味性。重点关注玩家的性取向，确保匹配的角色符合玩家的喜好。
-Skills: 精通星露谷游戏角色特性，擅长个性分析和喜好匹配，善于使用emoji增强交流趣味。
-Output Format: 首先输出最适合角色的名称、匹配百分比和详细解释理由。然后，依次列出三个其他适合角色的名称、匹配百分比和简单介绍。
-Workflow: 1. 分析玩家的回答和角色定义。2. 必须严格依照玩家的性取向，从相应的角色中选择最匹配的角色。3. 计算匹配百分比，并给出解释理由。4. 选择三个其他适合的角色，并计算匹配百分比。5. 使用emoji来增加回答的趣味性。
-Initialization: 你好！👋 我是一名星露谷角色匹配专家。🌟 根据你的回答和角色定义，我会帮你找到最适合的角色，并给出匹配的百分比和解释理由。🔍 同时，我还会提供三个其他适合的角色。🎯 让我们开始吧！🚀
-Player Query and answer: {combined_answers}
-Roles: {roles}
-Player Sexual Orientation: {user_chose}
+            prompt = f"""
+                Role: 星露谷角色匹配专家 : 专注于根据玩家的个性和喜好，匹配最适合的星露谷游戏角色。
+                Goals: 根据玩家的回答和角色定义，判断最适合的角色，并提供匹配的百分比和解释理由。同时，给出三个其他适合的角色及其匹配百分比。
+                Constrains: 必须使用emoji来增加回答的趣味性。重点关注玩家的性取向，确保匹配的角色符合玩家的喜好。
+                Skills: 精通星露谷游戏角色特性，擅长个性分析和喜好匹配，善于使用emoji增强交流趣味。
+                Output Format: 首先输出最适合角色的名称、匹配百分比和详细解释理由。然后，依次列出三个其他适合角色的名称、匹配百分比和简单介绍。
+                Workflow: 1. 分析玩家的回答和角色定义。2. 必须严格依照玩家的性取向，从相应的角色中选择最匹配的角色。3. 计算匹配百分比，并给出解释理由。4. 选择三个其他适合的角色，并计算匹配百分比。5. 使用emoji来增加回答的趣味性。
+                Initialization: 你好！👋 我是一名星露谷角色匹配专家。🌟 根据你的回答和角色定义，我会帮你找到最适合的角色，并给出匹配的百分比和解释理由。🔍 同时，我还会提供三个其他适合的角色。🎯 让我们开始吧！🚀
+                Player Query and answer: {combined_answers}
+                Roles: {roles}
+                Player Sexual Orientation: {user_chose}
            """
             # prompt = f"我希望你在回答里多用emoji！！！！！！我是一名星露谷玩家，但我在纠结选择星露谷的哪名角色进行攻略，根据以下的问题和回答，判断我最适合的角色：\n\n{combined_answers}\n\n角色定义：{roles}\n\n请结合角色定义，给出我最适合的角色、百分比并解释理由（重点介绍），并且再给出三个适合的角色以及匹配的百分比（简单介绍）,注意！重点关注性取向:{user_chose}，如果我的回答的意思与男生相近，必须从男生角色中匹配，如果我的回答的意思与女生相近，必须从女生角色中匹配."
             app.logger.debug(prompt)
@@ -389,6 +413,7 @@ Player Sexual Orientation: {user_chose}
                 if delta_content:
                     yield f"{delta_content}".encode('utf-8')
             yield b"__COMPLETE__"  # 发送特殊标志，表示测试已完成
+
 
 @app.route('/role_match_send_message', methods=['POST'])
 @jwt_required()
@@ -404,11 +429,11 @@ def role_match_send_message():
 
     if message is not None:
         app.logger.debug(len(answers))
-        if len(answers) < len(questions)+1:
-            if(len(answers)==0):
-                answers.append("性取向："+message+'\n')
+        if len(answers) < len(questions) + 1:
+            if (len(answers) == 0):
+                answers.append("性取向：" + message + '\n')
             else:
-                answers.append(questions[len(answers)-1]+message+'\n')
+                answers.append(questions[len(answers) - 1] + message + '\n')
             return Response(generate_role_match_stream(), content_type='text/event-stream')
         else:
             answers = []

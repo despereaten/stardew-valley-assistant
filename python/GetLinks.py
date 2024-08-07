@@ -109,8 +109,8 @@ def get_keywords(message_list):
 
     # return parsed_output['keywords']
     raw_keywords = parsed_output['keywords']
-    return ["星露谷 " + word for word in count_word_frequencies(raw_keywords,message_list)]
-
+    # return ["星露谷 " + word for word in count_word_frequencies(raw_keywords,message_list)]
+    return count_word_frequencies(raw_keywords, message_list)
 # 词频计算,获取词频最高的前五个词
 def count_word_frequencies(word_list, message_list):
     text = ','.join(message_list)
@@ -137,6 +137,8 @@ def generate_search_keys(keywords):
 
 def get_link(message_list):
     keywords = get_keywords(message_list)
+    keywords = ["星露谷 " + word for word in keywords]
+    print(keywords)
     return get_link_list(keywords)
 
 if __name__ == '__main__':

@@ -325,7 +325,7 @@ def get_messages_by_session_and_sender(user_id,count):
         messages = ChatHistory.query.filter_by(session_id=session.session_id, sender='User').all()
         if messages:
             message_list.extend([chat.message for chat in messages])
-    # print("最新词汇列表：", messages)
+    print("最新词汇列表：", messages)
     # 返回消息列表
     return message_list
 

@@ -144,10 +144,8 @@ print("==============分词^==============")
 from langchain_huggingface import HuggingFaceEmbeddings
 
 EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name=r"models\m3e-base",
-                                   model_kwargs={'device':EMBEDDING_DEVICE})
-# embeddings = HuggingFaceEmbeddings(model_name=r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
-#                                    model_kwargs={'device': EMBEDDING_DEVICE})
+embeddings = HuggingFaceEmbeddings(model_name=r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+                                   model_kwargs={'device': EMBEDDING_DEVICE})
 print("=============加载分词和向量化模型============")
 
 # 建立索引：将词向量存储到向量数据库

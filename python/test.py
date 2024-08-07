@@ -16,47 +16,47 @@ os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中
 from langchain_community.chat_models import ChatZhipuAI
 
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import TextLoader,PyPDFLoader, Docx2txtLoader
-
-base_dir = "..\\mydocuments"  # 文档存放目录
-documents = []
-
-for filename in os.listdir(base_dir):
-    for filename in os.listdir(base_dir):
-        # 构建完整文件名
-        file_path = os.path.join(base_dir, filename)
-        # 分别加载不同文件
-        if filename.endswith(".pdf"):
-            loader = PyPDFLoader(file_path)
-            documents.extend(loader.load())
-        elif filename.endswith(".docx"):
-            loader = Docx2txtLoader(file_path)
-            documents.extend(loader.load())
-        elif filename.endswith(".txt"):
-            loader = TextLoader(file_path, encoding='utf-8')  # 指定编码
-            documents.extend(loader.load())
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=10)
-texts = text_splitter.split_documents(documents)
-print("==============分词^==============")
-
-# 加载分词和向量化模型
-from langchain_huggingface import HuggingFaceEmbeddings
-
-EMBEDDING_DEVICE = "cpu"
-embeddings = HuggingFaceEmbeddings(model_name=r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
-                                   model_kwargs={'device': EMBEDDING_DEVICE})
-print("=============加载分词和向量化模型============")
-
-# 建立索引：将词向量存储到向量数据库
-from langchain_community.vectorstores import FAISS
-
-vector = FAISS.from_documents(documents=texts, embedding=embeddings)
-print("==============词向量^==============")
-
-# 保存FAISS索引到磁盘
-vector.save_local("faiss_test_cohere")
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain_community.document_loaders import TextLoader,PyPDFLoader, Docx2txtLoader
+#
+# base_dir = "..\\mydocuments"  # 文档存放目录
+# documents = []
+#
+# for filename in os.listdir(base_dir):
+#     for filename in os.listdir(base_dir):
+#         # 构建完整文件名
+#         file_path = os.path.join(base_dir, filename)
+#         # 分别加载不同文件
+#         if filename.endswith(".pdf"):
+#             loader = PyPDFLoader(file_path)
+#             documents.extend(loader.load())
+#         elif filename.endswith(".docx"):
+#             loader = Docx2txtLoader(file_path)
+#             documents.extend(loader.load())
+#         elif filename.endswith(".txt"):
+#             loader = TextLoader(file_path, encoding='utf-8')  # 指定编码
+#             documents.extend(loader.load())
+#
+# text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=10)
+# texts = text_splitter.split_documents(documents)
+# print("==============分词^==============")
+#
+# # 加载分词和向量化模型
+# from langchain_huggingface import HuggingFaceEmbeddings
+#
+# EMBEDDING_DEVICE = "cpu"
+# embeddings = HuggingFaceEmbeddings(model_name=r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
+#                                    model_kwargs={'device': EMBEDDING_DEVICE})
+# print("=============加载分词和向量化模型============")
+#
+# # 建立索引：将词向量存储到向量数据库
+# from langchain_community.vectorstores import FAISS
+#
+# vector = FAISS.from_documents(documents=texts, embedding=embeddings)
+# print("==============词向量^==============")
+#
+# # 保存FAISS索引到磁盘
+# vector.save_local("faiss_test_cohere")
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -65,7 +65,7 @@ EMBEDDING_DEVICE = "cpu"
 embeddings = HuggingFaceEmbeddings(model_name= r"C:\Users\20991\PycharmProjects\lang-chain-demo\models\m3e-base",
                                    model_kwargs={'device': EMBEDDING_DEVICE})
 
-vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_test_cohere",
+vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index_cohere",
                           embeddings, allow_dangerous_deserialization=True)
 print("=============== 加载向量 =================")
 # 将向量数据库转换为检索器
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             break
         else:
             chunks = []
-            for chunk in retrieval_chain.invoke(user_input):
+            for chunk in retrieval_chain.stream(user_input):
                 # chunks.append(chunk)
                 # delta_content = chunk.get("result")
                 # if delta_content:

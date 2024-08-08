@@ -93,7 +93,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # 用于生成搜索查询并从外部检索信息
-retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
+retriever_chain = create_history_aware_retriever(llm, compression_retriever, prompt)
 
 # 用于生成最终回答，以便基于检索到的文档内容和对话历史回答用户问题，content为搜索到的文档内容
 prompt = ChatPromptTemplate.from_messages([

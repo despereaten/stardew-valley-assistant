@@ -1,5 +1,12 @@
+import asyncio
 import logging
-from flask import Flask, request, jsonify, Response
+import os
+import threading
+import time
+from asyncio import Lock
+
+import edge_tts
+from flask import Flask, request, jsonify, Response, send_from_directory
 import requests
 import importlib
 from flask_sqlalchemy import SQLAlchemy
@@ -52,6 +59,7 @@ class ChatHistory(db.Model):
     # 通过session_id字段与Session模型建立外键关系。
     session = db.relationship('Session', backref=db.backref('chats', lazy=True))
 
+
 # zy:推荐链接
 class Recommendation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,6 +67,7 @@ class Recommendation(db.Model):
     # title = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('recommendations', lazy=True))
+
 
 # 用户注册
 @app.route('/register', methods=['POST'])
@@ -115,6 +124,7 @@ def new_session():
     db.session.commit()
 
     return jsonify({'session_id': session_id, 'summary': summary})
+
 
 @app.route('/preset_start_new_session', methods=['POST'])
 @jwt_required()
@@ -203,7 +213,8 @@ def get_history(session_id):
     history = [{'message': chat.message, 'sender': chat.sender} for chat in chats]
     return jsonify({'history': history})
 
-@app.route('/generate_presets',methods=['GET'])
+
+@app.route('/generate_presets', methods=['GET'])
 @jwt_required()
 def generate_presets():
     user_id = get_jwt_identity()
@@ -216,6 +227,7 @@ def generate_presets():
         # 从所有链接中随机选择10个
         links = random.sample(presets, 4)
     return jsonify({'presets': presets})
+
 
 @app.route('/get_sessions', methods=['GET'])
 @jwt_required()
@@ -254,11 +266,12 @@ def delete_session(session_id):
 # zy：
 import random
 
+
 @app.route('/generate_links', methods=['POST'])
 @jwt_required()
 def generate_link():
     user_id = get_jwt_identity()
-    keytext = get_messages_by_session_and_sender(user_id,5)
+    keytext = get_messages_by_session_and_sender(user_id, 5)
     links = get_link(keytext)
 
     # 如果链接数量小于10,就全部返回
@@ -314,7 +327,7 @@ def get_links():
 
 
 # 获取用户最新的历史记录
-def get_messages_by_session_and_sender(user_id,count):
+def get_messages_by_session_and_sender(user_id, count):
     sessions = Session.query.filter_by(user_id=user_id).all()
     message_list = ['星露谷']
 
@@ -330,10 +343,17 @@ def get_messages_by_session_and_sender(user_id,count):
     return message_list
 
 
+# 用于存储人物名字的全局变量
+name = ""
+name_lock = threading.Lock()
+
+
 # 客户端发送消息
 @app.route('/send_chat_message', methods=['POST'])
 @jwt_required()
 def send_chat_message():
+    global name
+    name = ""
     user_id = get_jwt_identity()
     data = request.json
     session_id = data['session_id']
@@ -342,6 +362,8 @@ def send_chat_message():
     # 获取当前会话的chathistory条目
     session_entry = Session.query.filter_by(session_id=session_id, user_id=user_id).first()
     character_id = session_entry.character_id
+
+    name = character_id
 
     # 保存用户发送的消息到聊天历史记录
     user_chat = ChatHistory(session_id=session_id, message=message, sender='user')
@@ -352,28 +374,73 @@ def send_chat_message():
     history = ChatHistory.query.filter_by(session_id=session_id).all()
     chat_history = [{'content': chat.message, 'role': chat.sender} for chat in history]
 
-    # 提取历史记录中的消息部分
-    # history_messages = [chat['message'] for chat in chat_history if chat['message']]
-    # app.logger.debug(history_messages)
-
     # 生成流式回复
     return Response(chat_stream(message, chat_history, character_id, ), mimetype='text/plain')
 
 
+# 定义男名字和女名字的集合
+male_names = {'Alex', 'Elliott', 'Harvey', 'Sam', 'Sebastian', 'Shane'}
+female_names = {'Abigail', 'Emily', 'Haley', 'Leah', 'Maru', 'Penny'}
+
+
+async def text_to_speech(text, output_file):
+    global name
+    voice_choice = ''
+    if name in male_names:
+        voice_choice = 'zh-CN-YunyangNeural'
+    elif name in female_names:
+        voice_choice = 'zh-CN-XiaoyiNeural'
+
+    communicator = edge_tts.Communicate(text, voice=voice_choice)
+    await communicator.save(output_file)
+
+
+# 用于存储完整回答的全局变量
+complete_response = ""
+response_lock = threading.Lock()
+
+
 def chat_stream(input, history, character_id):
+    global complete_response
     # 动态导入，根据名字导入对应链条
     module_name = f"character_chains.{character_id}RoleChat"
     character_module = importlib.import_module(module_name)
     # 获取模块中的 llmchain 对象
     llmchain = character_module.chain
 
+    complete_response = ""
+
     for chunk in llmchain.stream({"question": input, "chat_history": history}):
         delta_content = chunk
-        # delta_content = chunk.get("output")
         if delta_content:
+            complete_response += delta_content
             yield f"{delta_content}".encode('utf-8')
         else:
             yield "\n".encode('utf-8')
+
+
+@app.route('/generate_audio', methods=['POST'])
+@jwt_required()
+def generate_audio():
+    global complete_response
+    with response_lock:
+        text = complete_response
+
+    # 生成语音并返回文件路径
+    output_dir = r"C:\voice"  # 指定保存目录，使用原始字符串
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, f"{int(time.time())}.mp3")  # 生成唯一文件名
+
+    asyncio.run(text_to_speech(text, output_file))
+
+    audio_url = f"/voice/{os.path.basename(output_file)}"
+    return jsonify({"audio": audio_url})
+
+
+@app.route('/voice/<path:filename>')
+def serve_audio(filename):
+    output_dir = r"C:\voice"
+    return send_from_directory(output_dir, filename)
 
 
 # zmj

@@ -179,6 +179,7 @@ export default {
       response: '',
       isStreaming: false,
       isStopped: false,
+      audio: null,
 
       showProfile: false,
       hideProfileTimer: null,
@@ -311,8 +312,13 @@ export default {
     //wyx:发送对话
     async sendChatMessage() {
       if (this.userInput.trim() === '') return;
-      // 显示等待动画
-      //document.getElementById('loading').style.display = 'flex';
+
+      if (this.audio) {
+        this.audio.pause();
+        this.audio.currentTime = 0; // 重置播放位置为起点
+        this.audio = null; // 清除音频对象
+      }
+
       const messageToSend = this.userInput;
       console.log("messageToSend", messageToSend);
       this.controller = new AbortController();
@@ -359,8 +365,6 @@ export default {
         throw new Error('Network response was not ok');
       }
       this.userInput = '';
-      // 隐藏等待动画
-      //document.getElementById('loading').style.display = 'none';
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -384,8 +388,32 @@ export default {
           this.scrollToBottom();
         });
       }
+
       this.isWaitingForResponse = false;
       this.isStreaming = false;
+
+      // 请求生成的音频文件
+      const audioResponse = await fetch('http://localhost:5000/generate_audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // 添加token
+        },
+        body: JSON.stringify({ text: this.response })
+      });
+
+      if (!audioResponse.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const audioData = await audioResponse.json();
+      const audioFilePath = `http://localhost:5000${audioData.audio}`;
+      console.log(audioFilePath);
+
+      const audio = new Audio(audioFilePath);
+      this.audio = audio;
+      audio.play(); // 播放音频
+
       // 在消息完全接收后或流式输出停止后保存答案
       if (!this.isStopped) {
         this.saveAnswer(this.response);
@@ -408,6 +436,12 @@ export default {
     cancelChatting(sessionId) {
       this.isChatting = false;
       localStorage.removeItem('isChatting');
+
+      if (this.audio) {
+        this.audio.pause();
+        this.audio.currentTime = 0; // 重置播放位置为起点
+        this.audio = null; // 清除音频对象
+      }
 
       axios
         .delete(`http://localhost:5000/delete_session/${sessionId}`)

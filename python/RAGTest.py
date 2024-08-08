@@ -31,10 +31,10 @@ os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1
 os.environ["COHERE_API_KEY"] = "zXiZIOuAtK8envjHFvrN6nIKCAB2ULmBkPL2IrL7"
 
 # langsmith
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
-os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
+# os.environ["LANGCHAIN_TRACING_V2"] = "true"
+# os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+# os.environ["LANGCHAIN_API_KEY"] = "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" # 这里的 your-api-key 就是上一步获得的 api key
+# os.environ["LANGCHAIN_PROJECT"] = "stardew-valley" # 这里输入在langsmith中创建的项目的名字
 
 
 # zhipu

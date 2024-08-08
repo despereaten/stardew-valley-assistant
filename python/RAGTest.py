@@ -24,7 +24,8 @@ import re
 # zhipu
 os.environ["ZHIPUAI_API_KEY"] = "92cc12aafa0a5c5e800079ffb16bc445.QrNIW2JoQjvTCSFz"
 # WebBaseLoader --BeautifulSoup4
-os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
+os.environ[
+    "USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0"
 os.environ["SERPAPI_API_KEY"] = "624e55f3f2020f6dd408be77e10d13067ee07a3e2965ce1695519feadabec772"
 
 # Cohere
@@ -48,7 +49,7 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 llm = ChatZhipuAI(
     model="glm-4",
     temperature=0.5,
-    streaming = True,
+    streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
 )
 
@@ -60,8 +61,8 @@ EMBEDDING_DEVICE = "cpu"
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
 # embeddings = HuggingFaceEmbeddings(model_name= "models\m3e-base",
 #                                    model_kwargs={'device': EMBEDDING_DEVICE})
-embeddings = HuggingFaceEmbeddings(model_name= "D:\PythonProjects\models\m3e-base",
-                                    model_kwargs={'device': EMBEDDING_DEVICE})
+embeddings = HuggingFaceEmbeddings(model_name="D:\PythonProjects\models\m3e-base",
+                                   model_kwargs={'device': EMBEDDING_DEVICE})
 print("==============加载模型==============")
 # vector = FAISS.load_local(r"C:\Users\20991\Desktop\stardew-valley-assistant\python\faiss_index_cohere",
 #                           embeddings, allow_dangerous_deserialization=True)
@@ -78,7 +79,7 @@ print("==============检索器包装^==============")
 # 引入了基于语言模型的重排序，从而提高了检索结果的质量和相关性
 compressor = CohereRerank(model="rerank-multilingual-v3.0")
 compression_retriever = ContextualCompressionRetriever(
-    base_compressor = compressor,base_retriever = retriever
+    base_compressor=compressor, base_retriever=retriever
 )
 
 from langchain.chains import create_history_aware_retriever
@@ -93,7 +94,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # 用于生成搜索查询并从外部检索信息
-retriever_chain = create_history_aware_retriever(llm, compression_retriever, prompt)
+retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
 # 用于生成最终回答，以便基于检索到的文档内容和对话历史回答用户问题，content为搜索到的文档内容
 prompt = ChatPromptTemplate.from_messages([
@@ -127,6 +128,7 @@ def get_response(human_message, chat_history):
     chat_history.append(AIMessage(content=ai_message))
     return ai_message
 
+
 def summarize_dialog(human_message):
     response = retrieval_chain.invoke({
         "chat_history": [],  # 仅处理当前输入
@@ -142,6 +144,7 @@ def summarize_dialog(human_message):
     summary = response["answer"]
     # print(summary)
     return summary
+
 
 def get_links(human_message):
     response = retrieval_chain.invoke({
@@ -173,7 +176,7 @@ def get_links(human_message):
     return links
 
 
-def RAG_stream(input,chat_history):
+def RAG_stream(input, chat_history):
     for chunk in retrieval_chain.stream({"chat_history": chat_history, "input": input}):
         delta_content = chunk.get("answer")
         if delta_content:

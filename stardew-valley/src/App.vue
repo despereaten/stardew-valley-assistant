@@ -19,4 +19,9 @@ import { RouterLink, RouterView } from 'vue-router'
   <RouterView />
 </template>
 
-<style scoped></style>
+<style>
+html,
+body {
+  cursor: url("./assets/cursor/Rabbit_Foot.png"), auto;
+}
+</style>

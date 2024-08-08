@@ -1,9 +1,16 @@
 import os
 
-import edge_tts
+def list_directories(path, level=2, current_level=1):
+    if current_level > level:
+        return
+    for entry in os.listdir(path):
+        entry_path = os.path.join(path, entry)
+        if os.path.isdir(entry_path):
+            print('    ' * (current_level - 1) + '|-- ' + entry)
+            list_directories(entry_path, level, current_level + 1)
 
-delta_content = "你好，我是阿比盖尔，我喜欢睡觉旅行吹笛子，我也喜欢紫色和紫水晶"
-# edge-tts --voice zh-CN-YunjianNeural --text "你好，我是阿比盖尔，我喜欢睡觉旅行吹笛子，我也喜欢紫色和紫水晶" --write-media zh-CN-YunjianNeural.mp3
-# edge-tts --voice zh-CN-YunxiNeural --text "你好，我是阿比盖尔，我喜欢睡觉旅行吹笛子，我也喜欢紫色和紫水晶" --write-media zh-CN-YunxiNeural.mp3
-# edge-tts --voice zh-CN-YunxiaNeural --text "你好，我是阿比盖尔，我喜欢睡觉旅行吹笛子，我也喜欢紫色和紫水晶" --write-media zh-CN-YunxiaNeural.mp3
-# edge-tts --voice zh-CN-YunyangNeural --text "你好，我是阿比盖尔，我喜欢睡觉旅行吹笛子，我也喜欢紫色和紫水晶" --write-media zh-CN-YunyangNeural.mp3
+# 设置你要检查的目录路径
+root_path = r'C:\Users\wyx\Desktop\实训\客服\stardew-valley-assistant'
+
+# 列出目录结构
+list_directories(root_path)
